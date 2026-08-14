@@ -198,10 +198,12 @@ class XLangInterpreter {
         return parts;
     }
 
+    // ---- evalExpr seguro: whitelist estrita, sem acesso a globals ----
     evalExpr(expr, scope) {
         let out = '';
         let i = 0;
         const calledFuncs = new Set();
+        const ALLOWED_LITERALS = new Set(['true', 'false', 'null']);
 
         while (i < expr.length) {
             const c = expr[i];
@@ -220,15 +222,26 @@ class XLangInterpreter {
                 while (k < expr.length && /\s/.test(expr[k])) k++;
                 const isCall = expr[k] === '(';
 
-                if (isCall) {
+                if (ALLOWED_LITERALS.has(word)) {
+                    out += word;
+                } else if (isCall) {
+                    if (!scope.getFunc(word) && !this.globalFuncs.get(word)) {
+                        throw new Error(`Função XLang não definida: "${word}"`);
+                    }
                     calledFuncs.add(word);
                     out += word;
                 } else {
                     const entry = scope.getVarEntry(word);
-                    out += entry !== undefined ? JSON.stringify(this.currentValue(entry)) : word;
+                    if (entry === undefined) {
+                        throw new Error(`Identificador não permitido em expressão XLang: "${word}"`);
+                    }
+                    out += JSON.stringify(this.currentValue(entry));
                 }
                 i += word.length;
                 continue;
+            }
+            if (!/[\s+\-*/%()<>=!&|,.]/.test(c)) {
+                throw new Error(`Caractere não permitido em expressão XLang: "${c}"`);
             }
             out += c;
             i++;
@@ -241,8 +254,8 @@ class XLangInterpreter {
             paramValues.push((...args) => this.callFunction(name, args, scope));
         });
 
-        const fn = Function(...paramNames, '"use strict"; return (' + out + ')');
-        return fn(...paramValues);
+        const fn = new Function(...paramNames, 'return (' + out + ')');
+        return fn.apply(undefined, paramValues);
     }
 
     callFunction(name, argValues, callerScope) {
@@ -374,9 +387,11 @@ class XLangInterpreter {
 
                 const rawValue = (this.getAttr(attrs, 'value') || '').trim();
 
-                if (rawValue.startsWith('<input')) {
+                // input embutido: detecta em qualquer posicao do value, nao so no inicio
+                const inputMatch = rawValue.match(/<input\b[^>]*\/?>/i);
+                if (inputMatch) {
                     const temp = document.createElement('div');
-                    temp.innerHTML = rawValue;
+                    temp.innerHTML = inputMatch[0];
                     const inputEl = temp.firstChild;
                     this.outputDiv.appendChild(inputEl);
                     scope.defineVar(name, { type: 'input', el: inputEl, mutable: tagName === 'var' });
@@ -494,6 +509,10 @@ class XLangInterpreter {
 
             case 'override': {
                 const name = this.getAttr(attrs, 'name');
+                // override exige que ja exista uma fun com esse nome; senao, erro
+                if (!this.globalFuncs.has(name)) {
+                    throw new Error(`<override fun> falhou: não existe <fun name="${name}"> para sobrescrever.`);
+                }
                 const params = (this.getAttr(attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
                 this.globalFuncs.set(name, { name, params, body, closureScope: scope, isPrivate: false, isOverride: true });
                 break;
@@ -505,28 +524,23 @@ class XLangInterpreter {
     }
 }
 
-// ===== AUTO-INICIALIZAÇÃO CORRIGIDA =====
-// Lê o HTML BRUTO antes do navegador processar
+// ===== AUTO-INICIALIZAÇÃO =====
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     function initXLang() {
-        // Busca o HTML fonte original
         fetch(window.location.href)
             .then(response => response.text())
             .then(html => {
-                // Encontra todos os <program> no HTML bruto
                 const regex = /<program[^>]*>([\s\S]*?)<\/program>/gi;
                 const matches = [...html.matchAll(regex)];
-                
-                // Encontra os elementos <program> no DOM
                 const programElements = document.querySelectorAll('program');
-                
+
                 matches.forEach((match, index) => {
                     if (index >= programElements.length) return;
-                    
+
                     const programEl = programElements[index];
                     const container = document.createElement('div');
                     const interpreter = new XLangInterpreter(container);
-                    
+
                     try {
                         interpreter.run(match[0]);
                         programEl.parentNode.replaceChild(container, programEl);
@@ -550,7 +564,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     }
 }
 
-// Export para Node.js
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { XLangInterpreter, Scope, BreakSignal, ContinueSignal, ReturnSignal };
 }
