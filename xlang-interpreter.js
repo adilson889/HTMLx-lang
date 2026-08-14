@@ -553,4 +553,4 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 // Export para Node.js
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { XLangInterpreter, Scope, BreakSignal, ContinueSignal, ReturnSignal };
-}
+} 
