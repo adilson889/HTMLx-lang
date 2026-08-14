@@ -352,7 +352,7 @@ class XLangInterpreter {
                     target = document.getElementById(idAttr);
                     if (!target) return;
                 } else {
-                    target = document.createElement('div');
+                    target = document.createElement('span');
                     this.outputDiv.appendChild(target);
                 }
 
@@ -361,7 +361,7 @@ class XLangInterpreter {
                         try { return String(this.evalExpr(expr.trim(), scope)); }
                         catch { return match; }
                     });
-                    target.textContent = text;
+                    target.textContent = text + ' ';
                 };
                 render();
 
@@ -520,21 +520,15 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         const programs = document.querySelectorAll('program');
         
         programs.forEach((programEl, index) => {
-            // Cria container de saída simples, sem estilos
-            const outputDiv = document.createElement('div');
-            outputDiv.id = `xlang-output-${index}`;
+            // Usa o PRÓPRIO <program> como container de saída
+            const interpreter = new XLangInterpreter(programEl);
             
-            // Insere o container após o <program>
-            programEl.parentNode.insertBefore(outputDiv, programEl.nextSibling);
-            
-            // Executa o programa
-            const interpreter = new XLangInterpreter(outputDiv);
             try {
                 interpreter.run(programEl.outerHTML);
                 console.log(`✓ Programa XLang #${index + 1} executado!`);
             } catch (error) {
                 console.error(`✗ Erro no programa XLang #${index + 1}:`, error);
-                outputDiv.textContent = 'ERRO: ' + error.message;
+                programEl.textContent = 'ERRO: ' + error.message;
             }
         });
     }
