@@ -8,8 +8,8 @@ class ReturnSignal {
 class Scope {
     constructor(parent = null) {
         this.parent = parent;
-        this.vars = new Map();  // nome -> { type: 'value'|'input', value/el, mutable }
-        this.funcs = new Map(); // funcoes privadas declaradas neste escopo
+        this.vars = new Map();
+        this.funcs = new Map();
     }
 
     defineVar(name, entry) {
@@ -58,7 +58,6 @@ class XLangInterpreter {
         this.injectHideStyle();
     }
 
-    // esconde qualquer <program> presente direto no HTML (uso em producao, fora do editor)
     injectHideStyle() {
         if (document.getElementById('xlang-hide-style')) return;
         const style = document.createElement('style');
@@ -85,14 +84,12 @@ class XLangInterpreter {
         }
     }
 
-    // roda um <program> escrito direto no HTML da pagina (fora do editor)
     runFromDOM() {
         const el = document.querySelector('program');
         if (!el) throw new Error('Tag <program> não encontrada no DOM.');
         this.run(el.outerHTML);
     }
 
-    // acha o indice do '>' que fecha a tag, ignorando '<'/'>' dentro de atributos entre aspas
     findTagEnd(str, fromIndex) {
         let inQuote = null;
         for (let i = fromIndex; i < str.length; i++) {
@@ -108,7 +105,6 @@ class XLangInterpreter {
         return -1;
     }
 
-    // divide um bloco em statements { tagName, attrs, body }, respeitando aninhamento e aspas
     parseStatements(block) {
         const statements = [];
         block = block.trim();
@@ -178,8 +174,6 @@ class XLangInterpreter {
         return statements;
     }
 
-    // le um atributo aceitando aspas simples ou duplas, sem misturar as duas
-    // (ex: condition="user == 'admin'" tem aspas duplas por fora, simples por dentro)
     getAttr(attrs, name) {
         let m = attrs.match(new RegExp(name + '="([^"]*)"'));
         if (m) return m[1];
@@ -196,7 +190,6 @@ class XLangInterpreter {
         return entry.value;
     }
 
-    // divide uma lista de argumentos por virgulas de topo (fora de parenteses/aspas)
     splitTopLevel(str) {
         const parts = [];
         let depth = 0, inQuote = null, current = '';
@@ -222,9 +215,6 @@ class XLangInterpreter {
         return parts;
     }
 
-    // avalia uma expressao XLang: troca variaveis conhecidas pelo valor atual e liga
-    // chamadas de funcao (nome seguido de "(") a funcoes reais; qualquer outro
-    // identificador (document, Math, etc.) passa direto para o JS nativo
     evalExpr(expr, scope) {
         let out = '';
         let i = 0;
@@ -298,12 +288,9 @@ class XLangInterpreter {
         return names;
     }
 
-    // executa uma lista de statements em sequencia. if/elseif/else sao tratados aqui
-    // porque o "else" (ou "elseif") se liga ao if/elseif anterior mais proximo,
-    // mesmo que haja outras tags entre eles no mesmo bloco.
     executeBlock(statements, scope) {
         let i = 0;
-        let chainState = null; // null = sem cadeia ativa, true = ja resolvida, false = procurando ramo
+        let chainState = null;
 
         while (i < statements.length) {
             const stmt = statements[i];
@@ -519,7 +506,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // formato da doc: <private fun name="..." params="..."> ... </private>
             case 'private': {
                 const name = this.getAttr(attrs, 'name');
                 const params = (this.getAttr(attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
@@ -527,7 +513,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // formato da doc: <override fun name="..." params="..."> ... </override>
             case 'override': {
                 const name = this.getAttr(attrs, 'name');
                 const params = (this.getAttr(attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
@@ -539,4 +524,56 @@ class XLangInterpreter {
                 break;
         }
     }
+}
+
+// ===== AUTO-INICIALIZAÇÃO PARA USO VIA CDN =====
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    function initXLang() {
+        // Injeta CSS para ocultar <program>
+        const style = document.createElement('style');
+        style.id = 'xlang-hide-style';
+        style.textContent = 'program { display: none !important; }';
+        document.head.appendChild(style);
+
+        // Encontra todos os <program> na página
+        const programs = document.querySelectorAll('program');
+        
+        programs.forEach((programEl, index) => {
+            // Cria container de saída automático
+            const outputDiv = document.createElement('div');
+            outputDiv.className = 'xlang-output';
+            outputDiv.id = `xlang-output-${index}`;
+            outputDiv.style.fontFamily = 'JetBrains Mono, monospace';
+            outputDiv.style.padding = '10px';
+            outputDiv.style.color = '#c9d1d9';
+            outputDiv.style.background = '#0d1117';
+            outputDiv.style.borderRadius = '6px';
+            outputDiv.style.margin = '10px 0';
+            
+            // Insere o container após o <program>
+            programEl.parentNode.insertBefore(outputDiv, programEl.nextSibling);
+            
+            // Executa o programa
+            const interpreter = new XLangInterpreter(outputDiv);
+            try {
+                interpreter.run(programEl.outerHTML);
+                console.log(`✓ Programa XLang #${index + 1} executado com sucesso!`);
+            } catch (error) {
+                console.error(`✗ Erro no programa XLang #${index + 1}:`, error);
+                outputDiv.innerHTML = `<div style="color: #f85149; padding: 10px;">ERRO: ${error.message}</div>`;
+            }
+        });
+    }
+
+    // Espera o DOM carregar
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initXLang);
+    } else {
+        initXLang();
+    }
+}
+
+// Export para Node.js
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { XLangInterpreter, Scope, BreakSignal, ContinueSignal, ReturnSignal };
 }
