@@ -55,15 +55,6 @@ class XLangInterpreter {
     constructor(outputDiv) {
         this.outputDiv = outputDiv;
         this.globalFuncs = new Map();
-        this.injectHideStyle();
-    }
-
-    injectHideStyle() {
-        if (document.getElementById('xlang-hide-style')) return;
-        const style = document.createElement('style');
-        style.id = 'xlang-hide-style';
-        style.textContent = 'program { display: none; }';
-        document.head.appendChild(style);
     }
 
     run(code) {
@@ -362,9 +353,6 @@ class XLangInterpreter {
                     if (!target) return;
                 } else {
                     target = document.createElement('div');
-                    target.style.padding = '4px 0';
-                    target.style.fontFamily = 'JetBrains Mono, monospace';
-                    target.style.color = '#c9d1d9';
                     this.outputDiv.appendChild(target);
                 }
 
@@ -373,7 +361,7 @@ class XLangInterpreter {
                         try { return String(this.evalExpr(expr.trim(), scope)); }
                         catch { return match; }
                     });
-                    target.textContent = idAttr ? text : '> ' + text;
+                    target.textContent = text;
                 };
                 render();
 
@@ -398,7 +386,6 @@ class XLangInterpreter {
                     const temp = document.createElement('div');
                     temp.innerHTML = rawValue;
                     const inputEl = temp.firstChild;
-                    inputEl.style.margin = '4px 0';
                     this.outputDiv.appendChild(inputEl);
                     scope.defineVar(name, { type: 'input', el: inputEl, mutable: tagName === 'var' });
                 } else if (rawValue.startsWith('<call')) {
@@ -529,26 +516,13 @@ class XLangInterpreter {
 // ===== AUTO-INICIALIZAÇÃO PARA USO VIA CDN =====
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     function initXLang() {
-        // Injeta CSS para ocultar <program>
-        const style = document.createElement('style');
-        style.id = 'xlang-hide-style';
-        style.textContent = 'program { display: none !important; }';
-        document.head.appendChild(style);
-
         // Encontra todos os <program> na página
         const programs = document.querySelectorAll('program');
         
         programs.forEach((programEl, index) => {
-            // Cria container de saída automático
+            // Cria container de saída simples, sem estilos
             const outputDiv = document.createElement('div');
-            outputDiv.className = 'xlang-output';
             outputDiv.id = `xlang-output-${index}`;
-            outputDiv.style.fontFamily = 'JetBrains Mono, monospace';
-            outputDiv.style.padding = '10px';
-            outputDiv.style.color = '#c9d1d9';
-            outputDiv.style.background = '#0d1117';
-            outputDiv.style.borderRadius = '6px';
-            outputDiv.style.margin = '10px 0';
             
             // Insere o container após o <program>
             programEl.parentNode.insertBefore(outputDiv, programEl.nextSibling);
@@ -557,10 +531,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             const interpreter = new XLangInterpreter(outputDiv);
             try {
                 interpreter.run(programEl.outerHTML);
-                console.log(`✓ Programa XLang #${index + 1} executado com sucesso!`);
+                console.log(`✓ Programa XLang #${index + 1} executado!`);
             } catch (error) {
                 console.error(`✗ Erro no programa XLang #${index + 1}:`, error);
-                outputDiv.innerHTML = `<div style="color: #f85149; padding: 10px;">ERRO: ${error.message}</div>`;
+                outputDiv.textContent = 'ERRO: ' + error.message;
             }
         });
     }
