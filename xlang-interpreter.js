@@ -4,7 +4,6 @@ class ReturnSignal {
     constructor(value) { this.value = value; }
 }
 
-// Escopo com encadeamento (para variaveis locais e closures de funcao)
 class Scope {
     constructor(parent = null) {
         this.parent = parent;
@@ -59,7 +58,6 @@ class XLangInterpreter {
 
     run(code) {
         this.globalFuncs = new Map();
-        this.outputDiv.innerHTML = '';
         const clean = code.replace(/<!--[\s\S]*?-->/g, '');
         const programMatch = clean.match(/<program[^>]*>([\s\S]*?)<\/program>/i);
         if (!programMatch) {
@@ -73,12 +71,6 @@ class XLangInterpreter {
                 throw e;
             }
         }
-    }
-
-    runFromDOM() {
-        const el = document.querySelector('program');
-        if (!el) throw new Error('Tag <program> não encontrada no DOM.');
-        this.run(el.outerHTML);
     }
 
     findTagEnd(str, fromIndex) {
@@ -513,27 +505,44 @@ class XLangInterpreter {
     }
 }
 
-// ===== AUTO-INICIALIZAÇÃO PARA USO VIA CDN =====
+// ===== AUTO-INICIALIZAÇÃO CORRIGIDA =====
+// Lê o HTML BRUTO antes do navegador processar
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     function initXLang() {
-        // Encontra todos os <program> na página
-        const programs = document.querySelectorAll('program');
-        
-        programs.forEach((programEl, index) => {
-            // Usa o PRÓPRIO <program> como container de saída
-            const interpreter = new XLangInterpreter(programEl);
-            
-            try {
-                interpreter.run(programEl.outerHTML);
-                console.log(`✓ Programa XLang #${index + 1} executado!`);
-            } catch (error) {
-                console.error(`✗ Erro no programa XLang #${index + 1}:`, error);
-                programEl.textContent = 'ERRO: ' + error.message;
-            }
-        });
+        // Busca o HTML fonte original
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                // Encontra todos os <program> no HTML bruto
+                const regex = /<program[^>]*>([\s\S]*?)<\/program>/gi;
+                const matches = [...html.matchAll(regex)];
+                
+                // Encontra os elementos <program> no DOM
+                const programElements = document.querySelectorAll('program');
+                
+                matches.forEach((match, index) => {
+                    if (index >= programElements.length) return;
+                    
+                    const programEl = programElements[index];
+                    const container = document.createElement('div');
+                    const interpreter = new XLangInterpreter(container);
+                    
+                    try {
+                        interpreter.run(match[0]);
+                        programEl.parentNode.replaceChild(container, programEl);
+                        console.log(`✓ Programa XLang #${index + 1} executado!`);
+                    } catch (error) {
+                        console.error(`✗ Erro:`, error);
+                        container.textContent = 'ERRO: ' + error.message;
+                        programEl.parentNode.replaceChild(container, programEl);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('XLang: Não foi possível ler o HTML fonte:', error);
+            });
     }
 
-    // Espera o DOM carregar
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initXLang);
     } else {
