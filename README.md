@@ -2,6 +2,10 @@
 
 **Programação usando as próprias tags HTML.**
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/adilson889/Xlang/main/img/xlang.jpg" alt="XLang" width="400" />
+</p>
+
 Sem nova sintaxe pra aprender, sem compilador externo, sem build step. Se já sabes HTML, já sabes 90% da XLang — o resto é só um punhado de tags novas (`<var>`, `<if>`, `<loop>`, `<fun>`...) que se comportam exactamente como esperarias.
 
 ```html
