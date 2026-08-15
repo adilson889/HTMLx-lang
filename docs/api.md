@@ -1,6 +1,6 @@
 **Perfeito!** API só do núcleo, sem libs!
 
-```markdown
+
 # XLang API Reference
 
 ## Core Interpreter
