@@ -1,0 +1,60 @@
+{
+  "name": "xlang-interpreter",
+  "version": "0.1.0",
+  "description": "XLang - Framework HTML com lógica de programação usando tags",
+  "main": "xlang-interpreter.js",
+  "types": "xlang-interpreter.d.ts",
+  "files": [
+    "xlang-interpreter.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test.js",
+    "lint": "eslint xlang-interpreter.js",
+    "build": "node build.js",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test",
+    "version": "git add -A",
+    "postversion": "git push && git push --tags"
+  },
+  "keywords": [
+    "xlang",
+    "html",
+    "framework",
+    "interpreter",
+    "template-engine",
+    "dsl",
+    "web",
+    "frontend",
+    "client-side",
+    "declarative"
+  ],
+  "author": {
+    "name": "Adilson C.Rafael",
+    "email": "adilsonrafael847@gmail.com",
+    "url": "https://github.com/adilson889"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adilson889/Xlang.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adilson889/Xlang/issues"
+  },
+  "homepage": "https://github.com/adilson889/Xlang#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0"
+  },
+  "dependencies": {}
+}
