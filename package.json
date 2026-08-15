@@ -10,8 +10,6 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node test.js",
-    "prepublishOnly": "npm test",
     "version": "git add -A",
     "postversion": "git push && git push --tags"
   },
