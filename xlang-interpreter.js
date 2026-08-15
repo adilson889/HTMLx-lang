@@ -50,7 +50,7 @@ class Scope {
         return undefined;
     }
 
-    // ===== NOVO: metadados de escopo (classe atual, classe pai p/ <super>) =====
+    // ===== metadados de escopo (classe atual, classe pai p/ <super>) =====
     findMeta(key) {
         let s = this;
         while (s) {
@@ -61,28 +61,111 @@ class Scope {
     }
 }
 
+// ===== Registry global de funcoes nativas =====
+// As nativas de String/Math (secao 15 da documentacao) ja vem registradas
+// aqui. Modulos futuros carregados via <import> (resolvido pelo Bootstrap)
+// se registram no mesmo Map chamando window.XLangRegistry.register(nome, fn).
+// evalExpr/callFunction consultam este Map exatamente como consultavam o
+// antigo NATIVE_FUNCS local.
+if (typeof window !== 'undefined') {
+    if (!window.__XLANG_NATIVE_REGISTRY__) {
+        window.__XLANG_NATIVE_REGISTRY__ = new Map();
+    }
+    if (!window.XLangRegistry) {
+        window.XLangRegistry = {
+            register(name, fn) {
+                window.__XLANG_NATIVE_REGISTRY__.set(name, fn);
+            },
+            has(name) {
+                return window.__XLANG_NATIVE_REGISTRY__.has(name);
+            },
+            get(name) {
+                return window.__XLANG_NATIVE_REGISTRY__.get(name);
+            }
+        };
+    }
+}
+const NATIVE_FUNCS = (typeof window !== 'undefined') ? window.__XLANG_NATIVE_REGISTRY__ : new Map();
+
+// ===== Funcoes nativas de String e Math (secao 15 da documentacao) =====
+// Consultadas no mesmo ponto onde evalExpr ja checa scope.getFunc/globalFuncs.
+[
+    ['upper', (texto) => String(texto).toUpperCase()],
+    ['lower', (texto) => String(texto).toLowerCase()],
+    ['trim', (texto) => String(texto).trim()],
+    ['split', (texto, sep) => String(texto).split(sep)],
+    ['replace', (texto, de, para) => String(texto).replace(de, para)],
+    ['includes', (texto, parte) => String(texto).includes(parte)],
+    ['round', (numero) => Math.round(Number(numero))],
+    ['floor', (numero) => Math.floor(Number(numero))],
+    ['ceil', (numero) => Math.ceil(Number(numero))],
+    ['abs', (numero) => Math.abs(Number(numero))],
+    ['random', (min, max) => Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min)],
+].forEach(([name, fn]) => NATIVE_FUNCS.set(name, fn));
+
 class XLangInterpreter {
     constructor(outputDiv) {
         this.outputDiv = outputDiv;
         this.globalFuncs = new Map();
-        this.classes = new Map(); // ===== NOVO =====
+        this.classes = new Map();
     }
 
-    run(code) {
+    // run() e async porque <import> (resolvido no topo do <program>, antes de
+    // qualquer outra tag) precisa esperar o Bootstrap injetar e carregar o
+    // <script src> do modulo via CDN. O resto da execucao (executeBlock)
+    // continua 100% sincrono, como sempre foi.
+    async run(code) {
         this.globalFuncs = new Map();
-        this.classes = new Map(); // ===== NOVO =====
+        this.classes = new Map();
         const clean = code.replace(/<!--[\s\S]*?-->/g, '');
         const programMatch = clean.match(/<program[^>]*>([\s\S]*?)<\/program>/i);
         if (!programMatch) {
             throw new Error('Missing <program> tag.');
         }
+
+        const allStatements = this.parseStatements(programMatch[1]);
+
+        // <import> so e aceito no nivel raiz do <program>, como cabecalho.
+        // Coleta todos os <import> do topo e resolve antes de rodar o resto.
+        const imports = [];
+        const bodyStatements = [];
+        for (const stmt of allStatements) {
+            if (stmt.tagName === 'import') {
+                imports.push(stmt);
+            } else {
+                bodyStatements.push(stmt);
+            }
+        }
+
+        if (imports.length > 0) {
+            await this.resolveImports(imports);
+        }
+
         const rootScope = new Scope(null);
         try {
-            this.executeBlock(this.parseStatements(programMatch[1]), rootScope);
+            this.executeBlock(bodyStatements, rootScope);
         } catch (e) {
             if (!(e instanceof BreakSignal) && !(e instanceof ContinueSignal) && !(e instanceof ReturnSignal)) {
                 throw e;
             }
+        }
+    }
+
+    // Delega a resolucao de cada <import> ao Bootstrap (window.XLangBootstrap),
+    // que sabe o mapa nome -> URL do CDN e como injetar o <script> no <head>.
+    // Sem o Bootstrap carregado, <import> falha com um erro claro em vez de
+    // silenciosamente nao fazer nada.
+    async resolveImports(importStatements) {
+        if (typeof window === 'undefined' || !window.XLangBootstrap || typeof window.XLangBootstrap.resolve !== 'function') {
+            throw new Error('<import> requires xlang-bootstrap.js to be loaded before running XLang programs.');
+        }
+        for (const stmt of importStatements) {
+            const from = this.getAttr(stmt.attrs, 'from');
+            const name = this.getAttr(stmt.attrs, 'name');
+            if (!name) {
+                throw new Error('<import> requires a "name" attribute.');
+            }
+            await window.XLangBootstrap.resolve(from || 'xlang', name);
         }
     }
 
@@ -91,7 +174,7 @@ class XLangInterpreter {
         for (let i = fromIndex; i < str.length; i++) {
             const c = str[i];
             if (inQuote) {
-                // ===== NOVO: \" ou \' dentro de um atributo não fecham a aspa =====
+                // \" ou \' dentro de um atributo não fecham a aspa
                 if (c === '\\') { i++; continue; }
                 if (c === inQuote) inQuote = null;
             } else if (c === '"' || c === "'") {
@@ -110,7 +193,8 @@ class XLangInterpreter {
 
         while (pos < block.length) {
             const rest = block.substring(pos);
-            const tagMatch = rest.match(/<(\w+)/);
+            // ===== ALTERADO: aceita nomes de tag com hífen (add-class, set-style, etc.) =====
+            const tagMatch = rest.match(/<([\w-]+)/);
             if (!tagMatch) break;
 
             const tagName = tagMatch[1];
@@ -172,7 +256,7 @@ class XLangInterpreter {
         return statements;
     }
 
-    // ===== ALTERADO: agora entende \" e \' escapados dentro do valor =====
+    // ===== entende \" e \' escapados dentro do valor =====
     getAttr(attrs, name) {
         let m = attrs.match(new RegExp(name + '="((?:[^"\\\\]|\\\\.)*)"'));
         if (m) return this.unescapeAttr(m[1]);
@@ -181,9 +265,21 @@ class XLangInterpreter {
         return null;
     }
 
-    // ===== NOVO =====
     unescapeAttr(s) {
         return s.replace(/\\(.)/g, '$1');
+    }
+
+    // JSON.stringify converte Infinity/-Infinity/NaN para null, o que faz
+    // resultados como "10 / 0" virarem "null" em vez de Infinity. Aqui
+    // esses tres casos sao embutidos como literal JS valido antes do
+    // fallback normal do JSON.stringify.
+    safeSerialize(val) {
+        if (typeof val === 'number') {
+            if (Number.isNaN(val)) return 'NaN';
+            if (val === Infinity) return 'Infinity';
+            if (val === -Infinity) return '-Infinity';
+        }
+        return JSON.stringify(val);
     }
 
     currentValue(entry) {
@@ -221,14 +317,14 @@ class XLangInterpreter {
     }
 
     // ---- evalExpr seguro: whitelist estrita, sem acesso a globals ----
-    // ===== ALTERADO: agora entende obj.campo e obj.metodo(...) =====
+    // entende obj.campo e obj.metodo(...)
     evalExpr(expr, scope) {
         let out = '';
         let i = 0;
         const calledFuncs = new Set();
-        const methodCalls = new Map(); // ===== NOVO =====
+        const methodCalls = new Map();
         let methodCounter = 0;
-        const callerClassName = scope.findMeta('currentClassName'); // ===== NOVO =====
+        const callerClassName = scope.findMeta('currentClassName');
         const ALLOWED_LITERALS = new Set(['true', 'false', 'null']);
 
         while (i < expr.length) {
@@ -245,7 +341,7 @@ class XLangInterpreter {
             if (wordMatch) {
                 const word = wordMatch[0];
 
-                // ===== NOVO: detecta cadeia obj.campo(.campo2...) =====
+                // detecta cadeia obj.campo(.campo2...)
                 const chain = [word];
                 let scanPos = i + word.length;
                 while (true) {
@@ -272,7 +368,7 @@ class XLangInterpreter {
                 }
 
                 if (chain.length === 1 && followedByParen) {
-                    if (!scope.getFunc(word) && !this.globalFuncs.get(word)) {
+                    if (!scope.getFunc(word) && !this.globalFuncs.get(word) && !NATIVE_FUNCS.has(word)) {
                         throw new Error(`Undefined XLang function: "${word}"`);
                     }
                     calledFuncs.add(word);
@@ -281,7 +377,7 @@ class XLangInterpreter {
                     continue;
                 }
 
-                // ===== NOVO: chamada de método obj.metodo(...) =====
+                // chamada de método obj.metodo(...)
                 if (chain.length > 1 && followedByParen) {
                     if (chain.length !== 2) {
                         throw new Error(`Chained method calls not supported: "${chain.join('.')}"`);
@@ -299,7 +395,7 @@ class XLangInterpreter {
                     continue;
                 }
 
-                // ===== NOVO: leitura de campo obj.campo(.campo2...) =====
+                // leitura de campo obj.campo(.campo2...)
                 if (chain.length > 1) {
                     const objName = chain[0];
                     const entry = scope.getVarEntry(objName);
@@ -310,7 +406,7 @@ class XLangInterpreter {
                     for (let ci = 1; ci < chain.length; ci++) {
                         val = (val !== null && val !== undefined) ? val[chain[ci]] : undefined;
                     }
-                    out += JSON.stringify(val === undefined ? null : val);
+                    out += this.safeSerialize(val === undefined ? null : val);
                     i = scanPos;
                     continue;
                 }
@@ -319,7 +415,7 @@ class XLangInterpreter {
                 if (entry === undefined) {
                     throw new Error(`Identifier not allowed in XLang expression: "${word}"`);
                 }
-                out += JSON.stringify(this.currentValue(entry));
+                out += this.safeSerialize(this.currentValue(entry));
                 i = scanPos;
                 continue;
             }
@@ -334,9 +430,12 @@ class XLangInterpreter {
         const paramValues = [];
         calledFuncs.forEach((name) => {
             paramNames.push(name);
-            paramValues.push((...args) => this.callFunction(name, args, scope));
+            if (NATIVE_FUNCS.has(name) && !scope.getFunc(name) && !this.globalFuncs.get(name)) {
+                paramValues.push((...args) => NATIVE_FUNCS.get(name)(...args));
+            } else {
+                paramValues.push((...args) => this.callFunction(name, args, scope));
+            }
         });
-        // ===== NOVO =====
         methodCalls.forEach((info, placeholder) => {
             paramNames.push(placeholder);
             paramValues.push((...args) => this.callMethod(info.receiver, info.methodName, args, callerClassName));
@@ -348,7 +447,10 @@ class XLangInterpreter {
 
     callFunction(name, argValues, callerScope) {
         const def = callerScope.getFunc(name) || this.globalFuncs.get(name);
-        if (!def) throw new Error('Undefined function: ' + name);
+        if (!def) {
+            if (NATIVE_FUNCS.has(name)) return NATIVE_FUNCS.get(name)(...argValues);
+            throw new Error('Undefined function: ' + name);
+        }
 
         const fnScope = new Scope(def.closureScope);
         def.params.forEach((p, idx) => {
@@ -364,7 +466,7 @@ class XLangInterpreter {
         }
     }
 
-    // ===== NOVO: chama método de instância (com checagem de private) =====
+    // chama método de instância (com checagem de private)
     callMethod(instance, methodName, argValues, callerClassName) {
         if (!instance || !instance.__class) {
             throw new Error(`Cannot call method "${methodName}" on this value.`);
@@ -393,7 +495,7 @@ class XLangInterpreter {
         }
     }
 
-    // ===== NOVO: procura método subindo a cadeia de herança =====
+    // procura método subindo a cadeia de herança
     findMethod(className, methodName) {
         let cls = this.classes.get(className);
         while (cls) {
@@ -405,7 +507,7 @@ class XLangInterpreter {
         return null;
     }
 
-    // ===== NOVO: cria instância de classe =====
+    // cria instância de classe
     instantiate(className, argValues) {
         const cls = this.classes.get(className);
         if (!cls) throw new Error('Undefined class: ' + className);
@@ -432,7 +534,7 @@ class XLangInterpreter {
         return instance;
     }
 
-    // ===== NOVO: roda o <init> de uma classe (usado por instantiate e <super>) =====
+    // roda o <init> de uma classe (usado por instantiate e <super>)
     runInit(cls, instance, argValues) {
         if (!cls.initDef) return;
         const initScope = new Scope(cls.declScope);
@@ -459,6 +561,7 @@ class XLangInterpreter {
     executeBlock(statements, scope) {
         let i = 0;
         let chainState = null;
+        let tryFailed = null;
 
         while (i < statements.length) {
             const stmt = statements[i];
@@ -497,6 +600,36 @@ class XLangInterpreter {
                     this.executeBlock(this.parseStatements(stmt.body), new Scope(scope));
                 }
                 chainState = null;
+                i++;
+                continue;
+            }
+
+            if (tag === 'try') {
+                let errMsg = null;
+                try {
+                    this.executeBlock(this.parseStatements(stmt.body), new Scope(scope));
+                    tryFailed = false;
+                } catch (e) {
+                    if (e instanceof BreakSignal || e instanceof ContinueSignal || e instanceof ReturnSignal) {
+                        throw e;
+                    }
+                    tryFailed = true;
+                    errMsg = e.message;
+                }
+                if (tryFailed) {
+                    this._lastCaughtError = errMsg;
+                }
+                i++;
+                continue;
+            }
+
+            if (tag === 'catch') {
+                if (tryFailed === true) {
+                    const catchScope = new Scope(scope);
+                    catchScope.defineVar('error', { type: 'value', value: this._lastCaughtError, mutable: false });
+                    this.executeBlock(this.parseStatements(stmt.body), catchScope);
+                }
+                tryFailed = null;
                 i++;
                 continue;
             }
@@ -574,7 +707,7 @@ class XLangInterpreter {
                     const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
                     const result = this.callFunction(fnName, argValues, scope);
                     scope.defineVar(name, { type: 'value', value: result, mutable: tagName === 'var' });
-                } else if (rawValue.startsWith('<new')) { // ===== NOVO =====
+                } else if (rawValue.startsWith('<new')) {
                     const className = this.getAttr(rawValue, 'class');
                     const argsStr = this.getAttr(rawValue, 'args') || '';
                     const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
@@ -589,11 +722,27 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== ALTERADO: agora aceita name="this.campo" e name="arr[i]" =====
+            // aceita name="this.campo" e name="arr[i]"
             case 'set': {
                 const name = this.getAttr(attrs, 'name');
-                const rawValue = this.getAttr(attrs, 'value');
+                let rawValue = this.getAttr(attrs, 'value');
                 if (!name || rawValue === null) break;
+
+                // compound assignment: i++, i--, i += expr, i -= expr, i *= expr, i /= expr
+                // reescreve para a expressao pura equivalente (ex.: "i + 1") antes
+                // de seguir o fluxo normal de <set>, que ja sabe ler o valor atual
+                // de "name" (variavel simples, this.campo ou arr[i]).
+                rawValue = rawValue.trim();
+                const trimmedName = name.trim();
+                const incDecMatch = rawValue.match(/^([A-Za-z_][\w.\[\]]*)\s*(\+\+|--)$/);
+                const compoundMatch = rawValue.match(/^([A-Za-z_][\w.\[\]]*)\s*(\+=|-=|\*=|\/=)\s*(.+)$/);
+                if (incDecMatch && incDecMatch[1] === trimmedName) {
+                    const op = incDecMatch[2] === '++' ? '+' : '-';
+                    rawValue = `${trimmedName} ${op} 1`;
+                } else if (compoundMatch && compoundMatch[1] === trimmedName) {
+                    const op = compoundMatch[2][0];
+                    rawValue = `${trimmedName} ${op} (${compoundMatch[3]})`;
+                }
 
                 let value;
                 try { value = this.evalExpr(rawValue, scope); }
@@ -678,7 +827,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== NOVO: unshift/shift/indexOf/remove =====
             case 'unshift': {
                 const name = this.getAttr(attrs, 'name');
                 const rawValue = this.getAttr(attrs, 'value');
@@ -743,7 +891,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== NOVO: foreach =====
             case 'foreach': {
                 const varName = this.getAttr(attrs, 'var');
                 const inName = this.getAttr(attrs, 'in');
@@ -855,7 +1002,7 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== NOVO: call como statement solto, com suporte a target="obj" (método) =====
+            // call como statement solto, com suporte a target="obj" (método)
             case 'call': {
                 const fnName = this.getAttr(attrs, 'name');
                 const argsStr = this.getAttr(attrs, 'args') || '';
@@ -872,7 +1019,7 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== NOVO: declaração de classe =====
+            // declaração de classe
             case 'class': {
                 const name = this.getAttr(attrs, 'name');
                 if (!name) break;
@@ -928,7 +1075,7 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== NOVO: <super args="..." /> dentro de <init> =====
+            // <super args="..." /> dentro de <init>
             case 'super': {
                 const cls = scope.findMeta('classForSuper');
                 if (!cls || !cls.parentName) {
@@ -944,6 +1091,93 @@ class XLangInterpreter {
                 break;
             }
 
+            // ===== NOVO: DOM — eventos, classes, estilo, visibilidade =====
+            case 'on': {
+                const eventName = this.getAttr(attrs, 'event');
+                const targetId = this.getAttr(attrs, 'target');
+                const callName = this.getAttr(attrs, 'call');
+                if (!eventName || !targetId || !callName) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`Element with id "${targetId}" not found for <on>.`);
+                el.addEventListener(eventName, () => {
+                    try {
+                        this.callFunction(callName, [], scope);
+                    } catch (e) {
+                        console.error('XLang <on> error:', e.message);
+                    }
+                });
+                break;
+            }
+
+            case 'add-class': {
+                const targetId = this.getAttr(attrs, 'target');
+                const className = this.getAttr(attrs, 'class');
+                if (!targetId || !className) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`Element with id "${targetId}" not found.`);
+                el.classList.add(className);
+                break;
+            }
+
+            case 'remove-class': {
+                const targetId = this.getAttr(attrs, 'target');
+                const className = this.getAttr(attrs, 'class');
+                if (!targetId || !className) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`Element with id "${targetId}" not found.`);
+                el.classList.remove(className);
+                break;
+            }
+
+            case 'toggle-class': {
+                const targetId = this.getAttr(attrs, 'target');
+                const className = this.getAttr(attrs, 'class');
+                if (!targetId || !className) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`Element with id "${targetId}" not found.`);
+                el.classList.toggle(className);
+                break;
+            }
+
+            case 'show': {
+                const targetId = this.getAttr(attrs, 'target');
+                if (!targetId) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`Element with id "${targetId}" not found.`);
+                el.style.display = '';
+                break;
+            }
+
+            case 'hide': {
+                const targetId = this.getAttr(attrs, 'target');
+                if (!targetId) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`Element with id "${targetId}" not found.`);
+                el.style.display = 'none';
+                break;
+            }
+
+            case 'set-style': {
+                const targetId = this.getAttr(attrs, 'target');
+                const property = this.getAttr(attrs, 'property');
+                const rawValue = this.getAttr(attrs, 'value');
+                if (!targetId || !property || rawValue === null) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`Element with id "${targetId}" not found.`);
+                let value;
+                try { value = this.evalExpr(rawValue, scope); }
+                catch { value = rawValue; }
+                el.style.setProperty(property, String(value));
+                break;
+            }
+
+            // <import> so e valido no nivel raiz do <program> (cabecalho),
+            // resolvido em run() antes do executeBlock rodar. Se chegou aqui
+            // e porque apareceu dentro de <fun>/<if>/<loop>/etc, o que nao e
+            // suportado.
+            case 'import':
+                throw new Error('<import> is only allowed at the top level of <program>, not inside other blocks.');
+
             default:
                 break;
         }
@@ -954,24 +1188,25 @@ class XLangInterpreter {
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const xlangInterpreters = [];
 
-    function initXLang() {
+    async function initXLang() {
         const scripts = document.querySelectorAll('script[type="text/xlang"]');
 
-        scripts.forEach((scriptEl, index) => {
+        for (let index = 0; index < scripts.length; index++) {
+            const scriptEl = scripts[index];
             const container = document.createElement('div');
             const interpreter = new XLangInterpreter(container);
 
             try {
-                interpreter.run(scriptEl.textContent);
+                await interpreter.run(scriptEl.textContent);
                 scriptEl.parentNode.replaceChild(container, scriptEl);
                 xlangInterpreters.push(interpreter);
-                console.log(`✓ Programa XLang #${index + 1} executado!`);
+                console.log(`Programa XLang #${index + 1} executado.`);
             } catch (error) {
-                console.error(`✗ Erro:`, error);
+                console.error(`Erro:`, error);
                 container.textContent = 'ERRO: ' + error.message;
                 scriptEl.parentNode.replaceChild(container, scriptEl);
             }
-        });
+        }
     }
 
     if (document.readyState === 'loading') {
