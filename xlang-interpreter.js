@@ -366,7 +366,9 @@ class XLangInterpreter {
                         try { return String(this.evalExpr(expr.trim(), scope)); }
                         catch { return match; }
                     });
-                    target.textContent = text + ' ';
+                    // innerHTML: permite <br>, <hr>, <b>, etc. dentro do <print>.
+                    // A interpolação {} já ocorreu acima, antes desta linha.
+                    target.innerHTML = text + ' ';
                 };
                 render();
 
@@ -426,18 +428,18 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== NOVOS CASOS PARA ARRAYS =====
+            // ===== ARRAYS =====
             case 'array': {
                 const name = this.getAttr(attrs, 'name');
                 const rawValue = this.getAttr(attrs, 'value');
                 if (!name) break;
-                
+
                 let value = [];
                 if (rawValue !== null) {
                     try { value = this.evalExpr(rawValue, scope); }
                     catch { value = []; }
                 }
-                
+
                 scope.defineVar(name, { type: 'value', value, mutable: true });
                 break;
             }
@@ -446,16 +448,16 @@ class XLangInterpreter {
                 const name = this.getAttr(attrs, 'name');
                 const rawValue = this.getAttr(attrs, 'value');
                 if (!name || rawValue === null) break;
-                
+
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) {
                     throw new Error(`"${name}" não é um array.`);
                 }
-                
+
                 let value;
                 try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
-                
+
                 entry.value.push(value);
                 break;
             }
@@ -463,12 +465,12 @@ class XLangInterpreter {
             case 'pop': {
                 const name = this.getAttr(attrs, 'name');
                 if (!name) break;
-                
+
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) {
                     throw new Error(`"${name}" não é um array.`);
                 }
-                
+
                 entry.value.pop();
                 break;
             }
@@ -477,12 +479,12 @@ class XLangInterpreter {
                 const name = this.getAttr(attrs, 'name');
                 const target = this.getAttr(attrs, 'target');
                 if (!name || !target) break;
-                
+
                 const entry = scope.getVarEntry(target);
                 if (!entry || !Array.isArray(entry.value)) {
                     throw new Error(`"${target}" não é um array.`);
                 }
-                
+
                 scope.defineVar(name, { type: 'value', value: entry.value.length, mutable: true });
                 break;
             }
