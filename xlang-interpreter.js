@@ -240,7 +240,7 @@ class XLangInterpreter {
                 i += word.length;
                 continue;
             }
-            if (!/[\s+\-*/%()<>=!&|,.]/.test(c)) {
+            if (!/[\s0-9+\-*/%()<>=!&|,.\[\]]/.test(c)) {
                 throw new Error(`Caractere não permitido em expressão XLang: "${c}"`);
             }
             out += c;
@@ -387,7 +387,6 @@ class XLangInterpreter {
 
                 const rawValue = (this.getAttr(attrs, 'value') || '').trim();
 
-                // input embutido: detecta em qualquer posicao do value, nao so no inicio
                 const inputMatch = rawValue.match(/<input\b[^>]*\/?>/i);
                 if (inputMatch) {
                     const temp = document.createElement('div');
@@ -424,6 +423,67 @@ class XLangInterpreter {
                 try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
                 scope.setVar(name, { type: 'value', value, mutable: true });
+                break;
+            }
+
+            // ===== NOVOS CASOS PARA ARRAYS =====
+            case 'array': {
+                const name = this.getAttr(attrs, 'name');
+                const rawValue = this.getAttr(attrs, 'value');
+                if (!name) break;
+                
+                let value = [];
+                if (rawValue !== null) {
+                    try { value = this.evalExpr(rawValue, scope); }
+                    catch { value = []; }
+                }
+                
+                scope.defineVar(name, { type: 'value', value, mutable: true });
+                break;
+            }
+
+            case 'push': {
+                const name = this.getAttr(attrs, 'name');
+                const rawValue = this.getAttr(attrs, 'value');
+                if (!name || rawValue === null) break;
+                
+                const entry = scope.getVarEntry(name);
+                if (!entry || !Array.isArray(entry.value)) {
+                    throw new Error(`"${name}" não é um array.`);
+                }
+                
+                let value;
+                try { value = this.evalExpr(rawValue, scope); }
+                catch { value = rawValue; }
+                
+                entry.value.push(value);
+                break;
+            }
+
+            case 'pop': {
+                const name = this.getAttr(attrs, 'name');
+                if (!name) break;
+                
+                const entry = scope.getVarEntry(name);
+                if (!entry || !Array.isArray(entry.value)) {
+                    throw new Error(`"${name}" não é um array.`);
+                }
+                
+                entry.value.pop();
+                break;
+            }
+
+            case 'length': {
+                const name = this.getAttr(attrs, 'name');
+                const target = this.getAttr(attrs, 'target');
+                if (!name || !target) break;
+                
+                const entry = scope.getVarEntry(target);
+                if (!entry || !Array.isArray(entry.value)) {
+                    throw new Error(`"${target}" não é um array.`);
+                }
+                
+                scope.defineVar(name, { type: 'value', value: entry.value.length, mutable: true });
                 break;
             }
 
@@ -509,7 +569,6 @@ class XLangInterpreter {
 
             case 'override': {
                 const name = this.getAttr(attrs, 'name');
-                // override exige que ja exista uma fun com esse nome; senao, erro
                 if (!this.globalFuncs.has(name)) {
                     throw new Error(`<override fun> falhou: não existe <fun name="${name}"> para sobrescrever.`);
                 }
@@ -527,34 +586,22 @@ class XLangInterpreter {
 // ===== AUTO-INICIALIZAÇÃO =====
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     function initXLang() {
-        fetch(window.location.href)
-            .then(response => response.text())
-            .then(html => {
-                const regex = /<program[^>]*>([\s\S]*?)<\/program>/gi;
-                const matches = [...html.matchAll(regex)];
-                const programElements = document.querySelectorAll('program');
+        const scripts = document.querySelectorAll('script[type="text/xlang"]');
 
-                matches.forEach((match, index) => {
-                    if (index >= programElements.length) return;
+        scripts.forEach((scriptEl, index) => {
+            const container = document.createElement('div');
+            const interpreter = new XLangInterpreter(container);
 
-                    const programEl = programElements[index];
-                    const container = document.createElement('div');
-                    const interpreter = new XLangInterpreter(container);
-
-                    try {
-                        interpreter.run(match[0]);
-                        programEl.parentNode.replaceChild(container, programEl);
-                        console.log(`✓ Programa XLang #${index + 1} executado!`);
-                    } catch (error) {
-                        console.error(`✗ Erro:`, error);
-                        container.textContent = 'ERRO: ' + error.message;
-                        programEl.parentNode.replaceChild(container, programEl);
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('XLang: Não foi possível ler o HTML fonte:', error);
-            });
+            try {
+                interpreter.run(scriptEl.textContent);
+                scriptEl.parentNode.replaceChild(container, scriptEl);
+                console.log(`✓ Programa XLang #${index + 1} executado!`);
+            } catch (error) {
+                console.error(`✗ Erro:`, error);
+                container.textContent = 'ERRO: ' + error.message;
+                scriptEl.parentNode.replaceChild(container, scriptEl);
+            }
+        });
     }
 
     if (document.readyState === 'loading') {
