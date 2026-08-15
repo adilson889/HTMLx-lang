@@ -1,6 +1,3 @@
-**Perfeito!** API só do núcleo, sem libs!
-
-
 # XLang API Reference
 
 ## Core Interpreter
