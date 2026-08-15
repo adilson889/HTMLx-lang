@@ -1,4 +1,3 @@
-
 # XLang
 
 **Programming using HTML tags themselves.**
@@ -30,10 +29,6 @@ Runs directly in the browser. No npm, no bundler, no transpilation. It's HTML â€
 
 ## Quick Example
 
-<p align="center">
-  <img src="https://media.giphy.com/media/l0HlNaQ6gWfllcjDO/giphy.gif" alt="Simple" width="500" />
-</p>
-
 ```html
 <script type="text/xlang">
   <program>
@@ -49,7 +44,7 @@ Runs directly in the browser. No npm, no bundler, no transpilation. It's HTML â€
 ## Why XLang?
 
 <p align="center">
-  <img src="https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif" alt="Why" width="500" />
+  <img src="https://media.giphy.com/media/l0HlNaQ6gWfllcjDO/giphy.gif" alt="Simple" width="500" />
 </p>
 
 Most languages separate "what you see" from "what runs". XLang does not separate them â€” the `<program>` lives inside the page itself, reads and writes directly to the elements that are already there (`id`, `<input>`, `<div>`), with no translation layer in between.
@@ -59,7 +54,7 @@ Most languages separate "what you see" from "what runs". XLang does not separate
 ## Get Started
 
 <p align="center">
-  <img src="https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" alt="Start" width="500" />
+  <img src="https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif" alt="Get Started" width="500" />
 </p>
 
 ### 1. Import the interpreter
@@ -85,23 +80,18 @@ Most languages separate "what you see" from "what runs". XLang does not separate
 
 ## Complete Guide
 
-<p align="center">
-  <img src="https://media.giphy.com/media/l4FGpPxEcG8dN1n6g/giphy.gif" alt="Guide" width="500" />
-</p>
-
 The README covers the essentials to get started. For the complete technical reference â€” all tags, OOP in detail, arrays, real-world use cases, best practices â€” check the complete guide.
 
-**[https://github.com/adilson889/Xlang/tree/main/examples]**
+**[github.com/adilson889/Xlang/tree/main/examples](https://github.com/adilson889/Xlang/tree/main/examples)**
 
 ---
 
 ## Feedback
 
-**[https://adilsonrafael847@gmail.com]**
+**[adilsonrafael847@gmail.com](mailto:adilsonrafael847@gmail.com)**
 
 ---
 
 ## License
 
 *(See the LICENSE file)*
-```
