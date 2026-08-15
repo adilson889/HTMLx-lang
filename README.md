@@ -91,8 +91,7 @@ Most languages separate "what you see" from "what runs". XLang does not separate
 
 The README covers the essentials to get started. For the complete technical reference — all tags, OOP in detail, arrays, real-world use cases, best practices — check the complete guide.
 
-**[https://github.com/adilson889/Xlang/tree/main/examples]**
-
+**[Read the complete guide](https://github.com/adilson889/Xlang/tree/main/examples)**
 ---
 
 ## Feedback
