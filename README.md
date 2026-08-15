@@ -72,10 +72,12 @@ A maior parte das linguagens separa "o que se vê" de "o que corre". A XLang nã
 
 O README cobre o essencial para começar. Para a referência técnica completa — todas as tags, POO em detalhe, arrays, casos de uso reais, boas práticas — consulta o guia completo.
 
-📩 **[https://github.com/adilson889/Xlang/tree/main/examples]**
-
+ **[https://github.com/adilson889/Xlang/tree/main/examples]**
+---
+## Feedback 
+**[https://adilsonrafael847@gmail.com]**
 ---
 
 ## Licença
 
-*(a definir)*
+*(Veja o arquivo de LICENCE)*
