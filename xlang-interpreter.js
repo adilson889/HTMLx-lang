@@ -50,7 +50,6 @@ class Scope {
         return undefined;
     }
 
-    // ===== metadados de escopo (classe atual, classe pai p/ <super>) =====
     findMeta(key) {
         let s = this;
         while (s) {
@@ -62,11 +61,6 @@ class Scope {
 }
 
 // ===== Registry global de funcoes nativas =====
-// As nativas de String/Math (secao 15 da documentacao) ja vem registradas
-// aqui. Modulos futuros carregados via <import> (resolvido pelo Bootstrap)
-// se registram no mesmo Map chamando window.XLangRegistry.register(nome, fn).
-// evalExpr/callFunction consultam este Map exatamente como consultavam o
-// antigo NATIVE_FUNCS local.
 if (typeof window !== 'undefined') {
     if (!window.__XLANG_NATIVE_REGISTRY__) {
         window.__XLANG_NATIVE_REGISTRY__ = new Map();
@@ -87,8 +81,6 @@ if (typeof window !== 'undefined') {
 }
 const NATIVE_FUNCS = (typeof window !== 'undefined') ? window.__XLANG_NATIVE_REGISTRY__ : new Map();
 
-// ===== Funcoes nativas de String e Math (secao 15 da documentacao) =====
-// Consultadas no mesmo ponto onde evalExpr ja checa scope.getFunc/globalFuncs.
 [
     ['upper', (texto) => String(texto).toUpperCase()],
     ['lower', (texto) => String(texto).toLowerCase()],
@@ -108,12 +100,48 @@ class XLangInterpreter {
         this.outputDiv = outputDiv;
         this.globalFuncs = new Map();
         this.classes = new Map();
+        this.baseUrl = '';
+        this.bootstrapLoaded = false;
     }
 
-    // run() e async porque <import> (resolvido no topo do <program>, antes de
-    // qualquer outra tag) precisa esperar o Bootstrap injetar e carregar o
-    // <script src> do modulo via CDN. O resto da execucao (executeBlock)
-    // continua 100% sincrono, como sempre foi.
+    detectBaseUrl() {
+        if (typeof document === 'undefined') return './';
+        const scripts = document.querySelectorAll('script[src]');
+        for (const script of scripts) {
+            if (script.src.includes('xlang-interpreter.js')) {
+                const url = new URL(script.src);
+                return url.origin + url.pathname.replace(/\/[^/]*$/, '/');
+            }
+        }
+        return './';
+    }
+
+    async ensureBootstrap() {
+        if (this.bootstrapLoaded) return;
+        if (typeof window === 'undefined') return;
+        if (window.XLangBootstrap) {
+            this.bootstrapLoaded = true;
+            return;
+        }
+
+        this.baseUrl = this.detectBaseUrl();
+
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = this.baseUrl + 'xlang-bootstrap.js';
+            script.onload = () => {
+                this.bootstrapLoaded = true;
+                resolve();
+            };
+            script.onerror = () => reject(new Error('Failed to load xlang-bootstrap.js. Make sure it is in the same directory as xlang-interpreter.js.'));
+            document.head.appendChild(script);
+        });
+
+        if (window.XLangBootstrap && window.XLangBootstrap.setModulesJsonUrl) {
+            window.XLangBootstrap.setModulesJsonUrl(this.baseUrl + 'xlang-modules.json');
+        }
+    }
+
     async run(code) {
         this.globalFuncs = new Map();
         this.classes = new Map();
@@ -125,8 +153,6 @@ class XLangInterpreter {
 
         const allStatements = this.parseStatements(programMatch[1]);
 
-        // <import> so e aceito no nivel raiz do <program>, como cabecalho.
-        // Coleta todos os <import> do topo e resolve antes de rodar o resto.
         const imports = [];
         const bodyStatements = [];
         for (const stmt of allStatements) {
@@ -138,6 +164,7 @@ class XLangInterpreter {
         }
 
         if (imports.length > 0) {
+            await this.ensureBootstrap();
             await this.resolveImports(imports);
         }
 
@@ -151,13 +178,9 @@ class XLangInterpreter {
         }
     }
 
-    // Delega a resolucao de cada <import> ao Bootstrap (window.XLangBootstrap),
-    // que sabe o mapa nome -> URL do CDN e como injetar o <script> no <head>.
-    // Sem o Bootstrap carregado, <import> falha com um erro claro em vez de
-    // silenciosamente nao fazer nada.
     async resolveImports(importStatements) {
         if (typeof window === 'undefined' || !window.XLangBootstrap || typeof window.XLangBootstrap.resolve !== 'function') {
-            throw new Error('<import> requires xlang-bootstrap.js to be loaded before running XLang programs.');
+            throw new Error('<import> requires xlang-bootstrap.js to be loaded.');
         }
         for (const stmt of importStatements) {
             const from = this.getAttr(stmt.attrs, 'from');
@@ -174,7 +197,6 @@ class XLangInterpreter {
         for (let i = fromIndex; i < str.length; i++) {
             const c = str[i];
             if (inQuote) {
-                // \" ou \' dentro de um atributo não fecham a aspa
                 if (c === '\\') { i++; continue; }
                 if (c === inQuote) inQuote = null;
             } else if (c === '"' || c === "'") {
@@ -193,7 +215,6 @@ class XLangInterpreter {
 
         while (pos < block.length) {
             const rest = block.substring(pos);
-            // ===== ALTERADO: aceita nomes de tag com hífen (add-class, set-style, etc.) =====
             const tagMatch = rest.match(/<([\w-]+)/);
             if (!tagMatch) break;
 
@@ -249,6 +270,36 @@ class XLangInterpreter {
                 endIdx = closeEnd;
             }
 
+            // Converte <from xlang import math /> para <import from="xlang" name="math" />
+            if (tagName.toLowerCase() === 'from') {
+                const fromMatch1 = attrsRaw.match(/^(\w+)\s+import\s+(\w+)$/);
+                if (fromMatch1) {
+                    const [, fromName, importName] = fromMatch1;
+                    statements.push({
+                        tagName: 'import',
+                        attrs: `from="${fromName}" name="${importName}"`,
+                        body: ''
+                    });
+                    pos = endIdx;
+                    continue;
+                }
+
+                const fromAttr = this.getAttr(attrsRaw, 'import');
+                const fromNameMatch = attrsRaw.match(/^(\w+)/);
+                if (fromAttr && fromNameMatch) {
+                    const names = fromAttr.split(',').map(s => s.trim());
+                    for (const name of names) {
+                        statements.push({
+                            tagName: 'import',
+                            attrs: `from="${fromNameMatch[1]}" name="${name}"`,
+                            body: ''
+                        });
+                    }
+                    pos = endIdx;
+                    continue;
+                }
+            }
+
             statements.push({ tagName: tagName.toLowerCase(), attrs: attrsRaw, body });
             pos = endIdx;
         }
@@ -256,7 +307,6 @@ class XLangInterpreter {
         return statements;
     }
 
-    // ===== entende \" e \' escapados dentro do valor =====
     getAttr(attrs, name) {
         let m = attrs.match(new RegExp(name + '="((?:[^"\\\\]|\\\\.)*)"'));
         if (m) return this.unescapeAttr(m[1]);
@@ -269,10 +319,6 @@ class XLangInterpreter {
         return s.replace(/\\(.)/g, '$1');
     }
 
-    // JSON.stringify converte Infinity/-Infinity/NaN para null, o que faz
-    // resultados como "10 / 0" virarem "null" em vez de Infinity. Aqui
-    // esses tres casos sao embutidos como literal JS valido antes do
-    // fallback normal do JSON.stringify.
     safeSerialize(val) {
         if (typeof val === 'number') {
             if (Number.isNaN(val)) return 'NaN';
@@ -316,8 +362,6 @@ class XLangInterpreter {
         return parts;
     }
 
-    // ---- evalExpr seguro: whitelist estrita, sem acesso a globals ----
-    // entende obj.campo e obj.metodo(...)
     evalExpr(expr, scope) {
         let out = '';
         let i = 0;
@@ -341,7 +385,6 @@ class XLangInterpreter {
             if (wordMatch) {
                 const word = wordMatch[0];
 
-                // detecta cadeia obj.campo(.campo2...)
                 const chain = [word];
                 let scanPos = i + word.length;
                 while (true) {
@@ -377,7 +420,6 @@ class XLangInterpreter {
                     continue;
                 }
 
-                // chamada de método obj.metodo(...)
                 if (chain.length > 1 && followedByParen) {
                     if (chain.length !== 2) {
                         throw new Error(`Chained method calls not supported: "${chain.join('.')}"`);
@@ -395,7 +437,6 @@ class XLangInterpreter {
                     continue;
                 }
 
-                // leitura de campo obj.campo(.campo2...)
                 if (chain.length > 1) {
                     const objName = chain[0];
                     const entry = scope.getVarEntry(objName);
@@ -466,7 +507,6 @@ class XLangInterpreter {
         }
     }
 
-    // chama método de instância (com checagem de private)
     callMethod(instance, methodName, argValues, callerClassName) {
         if (!instance || !instance.__class) {
             throw new Error(`Cannot call method "${methodName}" on this value.`);
@@ -495,7 +535,6 @@ class XLangInterpreter {
         }
     }
 
-    // procura método subindo a cadeia de herança
     findMethod(className, methodName) {
         let cls = this.classes.get(className);
         while (cls) {
@@ -507,7 +546,6 @@ class XLangInterpreter {
         return null;
     }
 
-    // cria instância de classe
     instantiate(className, argValues) {
         const cls = this.classes.get(className);
         if (!cls) throw new Error('Undefined class: ' + className);
@@ -534,7 +572,6 @@ class XLangInterpreter {
         return instance;
     }
 
-    // roda o <init> de uma classe (usado por instantiate e <super>)
     runInit(cls, instance, argValues) {
         if (!cls.initDef) return;
         const initScope = new Scope(cls.declScope);
@@ -671,8 +708,6 @@ class XLangInterpreter {
                         try { return String(this.evalExpr(expr.trim(), scope)); }
                         catch (e) { return `[error: ${e.message}]`; }
                     });
-                    // innerHTML: permite <br>, <hr>, <b>, etc. dentro do <print>.
-                    // A interpolação {} já ocorreu acima, antes desta linha.
                     target.innerHTML = text + ' ';
                 };
                 render();
@@ -722,16 +757,11 @@ class XLangInterpreter {
                 break;
             }
 
-            // aceita name="this.campo" e name="arr[i]"
             case 'set': {
                 const name = this.getAttr(attrs, 'name');
                 let rawValue = this.getAttr(attrs, 'value');
                 if (!name || rawValue === null) break;
 
-                // compound assignment: i++, i--, i += expr, i -= expr, i *= expr, i /= expr
-                // reescreve para a expressao pura equivalente (ex.: "i + 1") antes
-                // de seguir o fluxo normal de <set>, que ja sabe ler o valor atual
-                // de "name" (variavel simples, this.campo ou arr[i]).
                 rawValue = rawValue.trim();
                 const trimmedName = name.trim();
                 const incDecMatch = rawValue.match(/^([A-Za-z_][\w.\[\]]*)\s*(\+\+|--)$/);
@@ -780,7 +810,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== ARRAYS =====
             case 'array': {
                 const name = this.getAttr(attrs, 'name');
                 const rawValue = this.getAttr(attrs, 'value');
@@ -1002,7 +1031,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // call como statement solto, com suporte a target="obj" (método)
             case 'call': {
                 const fnName = this.getAttr(attrs, 'name');
                 const argsStr = this.getAttr(attrs, 'args') || '';
@@ -1019,7 +1047,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // declaração de classe
             case 'class': {
                 const name = this.getAttr(attrs, 'name');
                 if (!name) break;
@@ -1075,7 +1102,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // <super args="..." /> dentro de <init>
             case 'super': {
                 const cls = scope.findMeta('classForSuper');
                 if (!cls || !cls.parentName) {
@@ -1091,7 +1117,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // ===== NOVO: DOM — eventos, classes, estilo, visibilidade =====
             case 'on': {
                 const eventName = this.getAttr(attrs, 'event');
                 const targetId = this.getAttr(attrs, 'target');
@@ -1171,10 +1196,6 @@ class XLangInterpreter {
                 break;
             }
 
-            // <import> so e valido no nivel raiz do <program> (cabecalho),
-            // resolvido em run() antes do executeBlock rodar. Se chegou aqui
-            // e porque apareceu dentro de <fun>/<if>/<loop>/etc, o que nao e
-            // suportado.
             case 'import':
                 throw new Error('<import> is only allowed at the top level of <program>, not inside other blocks.');
 
@@ -1215,8 +1236,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         initXLang();
     }
 
-    // Ponte para HTML/JS externo chamar funcoes publicas da XLang, ex:
-    // <button onclick="XLang.call('incrementar')">+1</button>
     window.XLang = {
         call(name, ...args) {
             for (const interp of xlangInterpreters) {
