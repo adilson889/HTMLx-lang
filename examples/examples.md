@@ -213,6 +213,11 @@ aparecerem corretamente.
 
 ## 8. Formulário interativo (input em tempo real)
 
+Os `<input>` **não são declarados no HTML** — a própria XLang cria os
+inputs a partir de `<val name="..." value="<input .../>" />`. Não repitas
+inputs "decorativos" no HTML por fora, senão terás dois conjuntos de campos
+onde só um deles (o criado pela XLang) está ligado ao cálculo.
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -224,27 +229,29 @@ aparecerem corretamente.
 
     <div style="border:1px solid #ccc; padding:10px; width:280px;">
         <h3>Calculadora</h3>
-        <input type="number" id="valor_a" placeholder="Número A" />
-        <input type="number" id="valor_b" placeholder="Número B" />
+        <script type="text/xlang">
+        <program>
+            <val name="a" value="<input type='number' />" />
+            <val name="b" value="<input type='number' />" />
+
+            <fun name="somar" params="x, y">
+                <return value="x + y" />
+            </fun>
+
+            <print id="resultado">Soma: {somar(a, b)}</print>
+        </program>
+        </script>
         <div id="resultado" style="margin-top:10px; font-weight:bold;"></div>
     </div>
-
-    <script type="text/xlang">
-    <program>
-        <val name="a" value="<input type='number' />" />
-        <val name="b" value="<input type='number' />" />
-
-        <fun name="somar" params="x, y">
-            <return value="x + y" />
-        </fun>
-
-        <print id="resultado">Soma: {somar(a, b)}</print>
-    </program>
-    </script>
 
 </body>
 </html>
 ```
+
+Os dois `<input>` aparecem no lugar exato onde o `<script type="text/xlang">`
+está, na ordem em que são declarados (`a` primeiro, `b` depois). Escrever
+neles atualiza `{somar(a, b)}` em tempo real, sem precisar recarregar nem
+clicar em nada.
 
 ---
 
@@ -407,3 +414,108 @@ HTML comum e a lógica escrita em XLang.
 Cada clique corre a função XLang, que atualiza a variável e reescreve o
 `<div id="contador_display">` — tudo dentro da própria XLang, disparado de
 fora por um evento HTML comum.
+
+---
+
+## 13. Lista de tarefas (uso real)
+
+Combina array, `foreach`, `push` e `XLang.call` num caso de uso comum.
+Nota: dentro de um `foreach`, monta-se a string completa antes de fazer um
+único `<print id="...">` no fim — cada `<print id="...">` **substitui** o
+conteúdo do elemento (não concatena), então chamar `<print>` várias vezes
+dentro do loop sobrescreveria a cada iteração.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"></script>
+</head>
+<body>
+
+    <div style="max-width:340px; font-family:sans-serif;">
+        <h3>Lista de tarefas</h3>
+        <script type="text/xlang">
+        <program>
+            <array name="tarefas" value="[]" />
+
+            <val name="novaTarefa" value="<input type='text' placeholder='Nova tarefa' style='padding:6px; border:1px solid #ccc; border-radius:6px; width:180px;' />" />
+
+            <fun name="adicionar">
+                <push name="tarefas" value="novaTarefa" />
+                <call name="renderizar" />
+            </fun>
+
+            <fun name="renderizar">
+                <var name="html" value="''" />
+                <foreach var="t" in="tarefas">
+                    <set name="html" value="html + t + '<br/>'" />
+                </foreach>
+                <print id="lista">{html}</print>
+            </fun>
+        </program>
+        </script>
+        <button onclick="XLang.call('adicionar')" style="margin-left:6px; padding:6px 12px;">Adicionar</button>
+        <div id="lista" style="margin-top:10px;"></div>
+    </div>
+
+</body>
+</html>
+```
+
+---
+
+## 14. Formulário com validação (uso real)
+
+Um formulário de contacto com validação encadeada (`if` / `elseif` / `else`),
+funções auxiliares, e feedback visual — o tipo de lógica que normalmente
+precisaria de JavaScript à parte, tudo dentro da própria XLang.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"></script>
+</head>
+<body>
+
+    <div style="max-width:320px; font-family:sans-serif;">
+        <h3>Contacto</h3>
+        <script type="text/xlang">
+        <program>
+            <val name="nome" value="<input type='text' placeholder='O teu nome' style='display:block; margin-bottom:8px; padding:8px; width:100%; border:1px solid #ccc; border-radius:6px;' />" />
+            <val name="email" value="<input type='email' placeholder='O teu email' style='display:block; margin-bottom:8px; padding:8px; width:100%; border:1px solid #ccc; border-radius:6px;' />" />
+
+            <fun name="validarEmail" params="e">
+                <if condition="e == ''">
+                    <return value="false" />
+                </if>
+                <return value="true" />
+            </fun>
+
+            <fun name="enviar">
+                <if condition="nome == ''">
+                    <print id="status" style="color:red;">Preenche o nome</print>
+                </if>
+                <elseif condition="validarEmail(email) == false">
+                    <print id="status" style="color:red;">Email inválido</print>
+                </elseif>
+                <else>
+                    <print id="status" style="color:green;">Mensagem enviada, {nome}!</print>
+                </else>
+            </fun>
+        </program>
+        </script>
+        <button onclick="XLang.call('enviar')" style="padding:8px 16px;">Enviar</button>
+        <div id="status" style="margin-top:10px; font-weight:bold;"></div>
+    </div>
+
+</body>
+</html>
+```
+
+A validação corre inteiramente no `<if>/<elseif>/<else>` da função
+`enviar`, chamando `validarEmail(email)` — outra função XLang — como parte
+da própria condição.
