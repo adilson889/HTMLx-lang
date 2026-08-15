@@ -952,6 +952,8 @@ class XLangInterpreter {
 
 // ===== AUTO-INICIALIZAÇÃO =====
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const xlangInterpreters = [];
+
     function initXLang() {
         const scripts = document.querySelectorAll('script[type="text/xlang"]');
 
@@ -962,6 +964,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             try {
                 interpreter.run(scriptEl.textContent);
                 scriptEl.parentNode.replaceChild(container, scriptEl);
+                xlangInterpreters.push(interpreter);
                 console.log(`✓ Programa XLang #${index + 1} executado!`);
             } catch (error) {
                 console.error(`✗ Erro:`, error);
@@ -976,6 +979,20 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     } else {
         initXLang();
     }
+
+    // Ponte para HTML/JS externo chamar funcoes publicas da XLang, ex:
+    // <button onclick="XLang.call('incrementar')">+1</button>
+    window.XLang = {
+        call(name, ...args) {
+            for (const interp of xlangInterpreters) {
+                if (interp.globalFuncs.has(name)) {
+                    const rootScope = new Scope(null);
+                    return interp.callFunction(name, args, rootScope);
+                }
+            }
+            throw new Error(`XLang.call: função pública "${name}" não encontrada.`);
+        }
+    };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
