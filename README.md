@@ -28,20 +28,9 @@
 
 ## What is XLang?
 
-<table>
-<tr>
-<td width="45%" valign="top">
-<img src="https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif" alt="Code" width="100%" />
-</td>
-<td width="55%" valign="top">
-
 No new syntax to learn, no external compiler, no build step. If you already know HTML, you already know 90% of XLang — the rest is just a handful of new tags that behave exactly as you'd expect.
 
 It runs directly in the browser. No npm, no bundler, no transpilation. It's HTML — and HTML is already your interface.
-
-</td>
-</tr>
-</table>
 
 <br>
 
@@ -65,13 +54,6 @@ console > Sum: 8
 
 ## Why XLang?
 
-<table>
-<tr>
-<td width="45%" valign="top">
-<img src="https://media.giphy.com/media/l0HlNaQ6gWfllcjDO/giphy.gif" alt="Simple" width="100%" />
-</td>
-<td width="55%" valign="top">
-
 Most languages separate *what you see* from *what runs*. XLang doesn't.
 
 The `<program>` lives inside the page itself — it reads and writes straight to the elements already sitting there: an `id`, an `<input>`, a `<div>`. There's no translation layer between your markup and your logic, because they were never two separate things to begin with.
@@ -82,17 +64,9 @@ The `<program>` lives inside the page itself — it reads and writes straight to
 
 That single tag wires a real DOM element to real XLang logic. No `addEventListener`, no build step — just a tag that says what it does.
 
-</td>
-</tr>
-</table>
-
 <br>
 
 ## Get started
-
-<table>
-<tr>
-<td width="55%" valign="top">
 
 **1. Import the interpreter**
 
@@ -112,13 +86,6 @@ That single tag wires a real DOM element to real XLang logic. No `addEventListen
 ```
 
 **3. Open the `.html` file in a browser. Done.**
-
-</td>
-<td width="45%" valign="top">
-<img src="https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif" alt="Get Started" width="100%" />
-</td>
-</tr>
-</table>
 
 <br>
 
