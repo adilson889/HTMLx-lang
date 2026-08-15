@@ -1,4 +1,6 @@
+
 # XLang
+
 **Programming using HTML tags themselves.**
 
 <p align="center">
@@ -60,17 +62,6 @@ Most languages separate "what you see" from "what runs". XLang does not separate
 
 ---
 
-## What Already Exists
-
-- Variables (`var`, `val`, `set`)
-- Control flow (`if` / `elseif` / `else`, `switch`)
-- Loops (`loop`, `for`, `foreach`, `break`, `continue`)
-- Functions (`fun`, `private fun`, `override fun`, recursion)
-- Arrays (`array`, `push`, `pop`, `foreach`, indexing)
-- Object-oriented programming (`class`, inheritance with `extends`, `super`, private methods)
-- Expression interpolation anywhere (`{a + b}`, `{object.method()}`)
-- Sandboxing: no XLang expression has access to `window`, `document` or browser APIs outside what the language itself exposes
-
 ## Complete Guide
 
 The README covers the essentials to get started. For the complete technical reference — all tags, OOP in detail, arrays, real-world use cases, best practices — check the complete guide.
@@ -84,3 +75,4 @@ The README covers the essentials to get started. For the complete technical refe
 ## License
 
 *(See the LICENSE file)*
+```
