@@ -7,47 +7,81 @@
     <meta charset="UTF-8" />
     <script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"></script>
     <style>
-        body { font-family: Arial; display: flex; justify-content: center; margin-top: 100px; }
-        .btn { padding: 10px 20px; background: #1877f2; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 2px; }
-        #resultado { margin-top: 10px; font-size: 18px; font-weight: bold; }
+        body { font-family: Arial; display: flex; justify-content: center; margin-top: 50px; background: #f0f2f5; }
+        .calc { background: #333; padding: 20px; border-radius: 15px; width: 280px; }
+        #display { background: #fff; padding: 15px; font-size: 24px; text-align: right; border-radius: 8px; margin-bottom: 15px; min-height: 30px; }
+        .btn { padding: 15px; margin: 3px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; width: 55px; }
+        .num { background: #555; color: white; }
+        .op { background: #f39c12; color: white; }
+        .clear { background: #e74c3c; color: white; }
+        .igual { background: #2ecc71; color: white; }
     </style>
 </head>
 <body>
 
-    <div>
+    <div class="calc">
+        <div id="display">0</div>
+        
         <script type="text/xlang">
         <program>
-            <val name="a" value="<input type='number' placeholder='Número A' style='padding:8px; margin-bottom:10px; display:block;' />" />
-            <val name="b" value="<input type='number' placeholder='Número B' style='padding:8px; margin-bottom:10px; display:block;' />" />
+            <var name="valorAtual" value="''" />
+            <var name="valorAnterior" value="''" />
+            <var name="operacao" value="''" />
 
-            <fun name="somar">
-                <print id="resultado">{a + b}</print>
+            <fun name="adicionarNumero" params="n">
+                <set name="valorAtual" value="valorAtual + n" />
+                <print id="display">{valorAtual}</print>
             </fun>
 
-            <fun name="subtrair">
-                <print id="resultado">{a - b}</print>
+            <fun name="definirOperacao" params="op">
+                <set name="valorAnterior" value="valorAtual" />
+                <set name="valorAtual" value="''" />
+                <set name="operacao" value="op" />
             </fun>
 
-            <fun name="multiplicar">
-                <print id="resultado">{a * b}</print>
-            </fun>
-
-            <fun name="dividir">
-                <if condition="b != 0">
-                    <print id="resultado">{a / b}</print>
+            <fun name="calcular">
+                <if condition="operacao == '+'">
+                    <print id="display">{valorAnterior * 1 + valorAtual * 1}</print>
                 </if>
-                <else>
-                    <print id="resultado">Erro: divisão por zero</print>
-                </else>
+                <elseif condition="operacao == '-'">
+                    <print id="display">{valorAnterior - valorAtual}</print>
+                </elseif>
+                <elseif condition="operacao == '*'">
+                    <print id="display">{valorAnterior * valorAtual}</print>
+                </elseif>
+                <elseif condition="operacao == '/'">
+                    <print id="display">{valorAnterior / valorAtual}</print>
+                </elseif>
+            </fun>
+
+            <fun name="limpar">
+                <set name="valorAtual" value="''" />
+                <set name="valorAnterior" value="''" />
+                <set name="operacao" value="''" />
+                <print id="display">0</print>
             </fun>
         </program>
         </script>
 
-        <button class="btn" onclick="XLang.call('somar')">+</button>
-        <button class="btn" onclick="XLang.call('subtrair')">-</button>
-        <button class="btn" onclick="XLang.call('multiplicar')">×</button>
-        <button class="btn" onclick="XLang.call('dividir')">÷</button>
-        <div id="resultado"></div>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '7')">7</button>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '8')">8</button>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '9')">9</button>
+        <button class="btn op" onclick="XLang.call('definirOperacao', '/')">÷</button>
+        
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '4')">4</button>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '5')">5</button>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '6')">6</button>
+        <button class="btn op" onclick="XLang.call('definirOperacao', '*')">×</button>
+        
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '1')">1</button>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '2')">2</button>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '3')">3</button>
+        <button class="btn op" onclick="XLang.call('definirOperacao', '-')">-</button>
+        
+        <button class="btn clear" onclick="XLang.call('limpar')">C</button>
+        <button class="btn num" onclick="XLang.call('adicionarNumero', '0')">0</button>
+        <button class="btn igual" onclick="XLang.call('calcular')">=</button>
+        <button class="btn op" onclick="XLang.call('definirOperacao', '+')">+</button>
     </div>
 
 </body>
