@@ -1,40 +1,38 @@
-<div align="center">
+```markdown
+# XLang
 
-# &lt;XLang/&gt;
+**Programming using HTML tags themselves.**
 
-### Programming using HTML tags themselves.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/adilson889/Xlang/main/img/xlang.jpg" alt="XLang" width="400" />
+</p>
 
-<img src="https://raw.githubusercontent.com/adilson889/Xlang/main/img/xlang.jpg" alt="XLang" width="360" />
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.1.2-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
+  <img src="https://img.shields.io/badge/status-active-brightgreen" alt="Status" />
+  <img src="https://img.shields.io/badge/no_build-required-orange" alt="No Build" />
+</p>
 
-<br>
-
-![Version](https://img.shields.io/badge/version-0.1.0-ff8a5c?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-7ec9a3?style=flat-square)
-![Status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)
-![No Build](https://img.shields.io/badge/no_build-required-e8c88a?style=flat-square)
-
-</div>
-
-<br>
-
-```html
-<program>
-  <var name="you" value="'developer'" />
-  <print>Hello, {you}</print>
-</program>
-```
-
-<br>
+---
 
 ## What is XLang?
 
-No new syntax to learn, no external compiler, no build step. If you already know HTML, you already know 90% of XLang — the rest is just a handful of new tags that behave exactly as you'd expect.
+<p align="center">
+  <img src="https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif" alt="Code" width="500" />
+</p>
 
-It runs directly in the browser. No npm, no bundler, no transpilation. It's HTML — and HTML is already your interface.
+No new syntax to learn, no external compiler, no build step. If you already know HTML, you already know 90% of XLang — the rest is just a handful of new tags that behave exactly as you would expect.
 
-<br>
+Runs directly in the browser. No npm, no bundler, no transpilation. It's HTML — and HTML is already your interface.
 
-## Quick example
+---
+
+## Quick Example
+
+<p align="center">
+  <img src="https://media.giphy.com/media/l0HlNaQ6gWfllcjDO/giphy.gif" alt="Simple" width="500" />
+</p>
 
 ```html
 <script type="text/xlang">
@@ -46,35 +44,31 @@ It runs directly in the browser. No npm, no bundler, no transpilation. It's HTML
 </script>
 ```
 
-```
-console > Sum: 8
-```
-
-<br>
+---
 
 ## Why XLang?
 
-Most languages separate *what you see* from *what runs*. XLang doesn't.
+<p align="center">
+  <img src="https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif" alt="Why" width="500" />
+</p>
 
-The `<program>` lives inside the page itself — it reads and writes straight to the elements already sitting there: an `id`, an `<input>`, a `<div>`. There's no translation layer between your markup and your logic, because they were never two separate things to begin with.
+Most languages separate "what you see" from "what runs". XLang does not separate them — the `<program>` lives inside the page itself, reads and writes directly to the elements that are already there (`id`, `<input>`, `<div>`), with no translation layer in between.
 
-```html
-<on event="click" target="btn" call="greet" />
-```
+---
 
-That single tag wires a real DOM element to real XLang logic. No `addEventListener`, no build step — just a tag that says what it does.
+## Get Started
 
-<br>
+<p align="center">
+  <img src="https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" alt="Start" width="500" />
+</p>
 
-## Get started
-
-**1. Import the interpreter**
+### 1. Import the interpreter
 
 ```html
 <script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"></script>
 ```
 
-**2. Write your program**
+### 2. Write your program
 
 ```html
 <script type="text/xlang">
@@ -85,32 +79,29 @@ That single tag wires a real DOM element to real XLang logic. No `addEventListen
 </script>
 ```
 
-**3. Open the `.html` file in a browser. Done.**
+### 3. Open the .html file in a browser. Done.
 
-<br>
+---
 
-## Complete guide
+## Complete Guide
 
-This README covers the essentials to get started. For the complete technical reference — every tag, OOP in detail, arrays, real-world use cases, best practices — check the complete guide:
+<p align="center">
+  <img src="https://media.giphy.com/media/l4FGpPxEcG8dN1n6g/giphy.gif" alt="Guide" width="500" />
+</p>
 
-**[github.com/adilson889/Xlang/tree/main/examples](https://github.com/adilson889/Xlang/tree/main/examples)**
+The README covers the essentials to get started. For the complete technical reference — all tags, OOP in detail, arrays, real-world use cases, best practices — check the complete guide.
 
-<br>
+**[https://github.com/adilson889/Xlang/tree/main/examples]**
+
+---
 
 ## Feedback
 
-**[adilsonrafael847@gmail.com](mailto:adilsonrafael847@gmail.com)**
+**[https://adilsonrafael847@gmail.com]**
 
-<br>
+---
 
 ## License
 
-See the [LICENSE](./LICENSE) file.
-
-<div align="center">
-
-<br>
-
-`</XLang>`
-
-</div>
+*(See the LICENSE file)*
+```
