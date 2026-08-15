@@ -1,38 +1,51 @@
+<div align="center">
 
-# XLang
+# &lt;XLang/&gt;
 
-**Programming using HTML tags themselves.**
+### Programming using HTML tags themselves.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/adilson889/Xlang/main/img/xlang.jpg" alt="XLang" width="400" />
-</p>
+<img src="https://raw.githubusercontent.com/adilson889/Xlang/main/img/xlang.jpg" alt="XLang" width="360" />
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Version" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
-  <img src="https://img.shields.io/badge/status-active-brightgreen" alt="Status" />
-  <img src="https://img.shields.io/badge/no_build-required-orange" alt="No Build" />
-</p>
+<br>
 
----
+![Version](https://img.shields.io/badge/version-0.1.0-ff8a5c?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-7ec9a3?style=flat-square)
+![Status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)
+![No Build](https://img.shields.io/badge/no_build-required-e8c88a?style=flat-square)
+
+</div>
+
+<br>
+
+```html
+<program>
+  <var name="you" value="'developer'" />
+  <print>Hello, {you}</print>
+</program>
+```
+
+<br>
 
 ## What is XLang?
 
 <table>
-  <tr>
-    <td width="60%">
-      <p>No new syntax to learn, no external compiler, no build step. If you already know HTML, you already know 90% of XLang — the rest is just a handful of new tags that behave exactly as you would expect.</p>
-      <p>Runs directly in the browser. No npm, no bundler, no transpilation. It's HTML — and HTML is already your interface.</p>
-    </td>
-    <td width="40%">
-      <img src="https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif" alt="Code" width="100%" />
-    </td>
-  </tr>
+<tr>
+<td width="45%" valign="top">
+<img src="https://media.giphy.com/media/26tn33aiTi1jkl6H6/giphy.gif" alt="Code" width="100%" />
+</td>
+<td width="55%" valign="top">
+
+No new syntax to learn, no external compiler, no build step. If you already know HTML, you already know 90% of XLang — the rest is just a handful of new tags that behave exactly as you'd expect.
+
+It runs directly in the browser. No npm, no bundler, no transpilation. It's HTML — and HTML is already your interface.
+
+</td>
+</tr>
 </table>
 
----
+<br>
 
-## Quick Example
+## Quick example
 
 ```html
 <script type="text/xlang">
@@ -44,61 +57,93 @@
 </script>
 ```
 
----
+```
+console > Sum: 8
+```
+
+<br>
 
 ## Why XLang?
 
 <table>
-  <tr>
-    <td width="40%">
-      <img src="https://media.giphy.com/media/l0HlNaQ6gWfllcjDO/giphy.gif" alt="Simple" width="100%" />
-    </td>
-    <td width="60%">
-      <p>Most languages separate "what you see" from "what runs". XLang does not separate them — the <code>&lt;program&gt;</code> lives inside the page itself, reads and writes directly to the elements that are already there (<code>id</code>, <code>&lt;input&gt;</code>, <code>&lt;div&gt;</code>), with no translation layer in between.</p>
-    </td>
-  </tr>
+<tr>
+<td width="45%" valign="top">
+<img src="https://media.giphy.com/media/l0HlNaQ6gWfllcjDO/giphy.gif" alt="Simple" width="100%" />
+</td>
+<td width="55%" valign="top">
+
+Most languages separate *what you see* from *what runs*. XLang doesn't.
+
+The `<program>` lives inside the page itself — it reads and writes straight to the elements already sitting there: an `id`, an `<input>`, a `<div>`. There's no translation layer between your markup and your logic, because they were never two separate things to begin with.
+
+```html
+<on event="click" target="btn" call="greet" />
+```
+
+That single tag wires a real DOM element to real XLang logic. No `addEventListener`, no build step — just a tag that says what it does.
+
+</td>
+</tr>
 </table>
 
----
+<br>
 
-## Get Started
+## Get started
 
 <table>
-  <tr>
-    <td width="60%">
-      <h3>1. Import the interpreter</h3>
-      <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"&gt;&lt;/script&gt;</code></pre>
-      <h3>2. Write your program</h3>
-      <pre><code>&lt;script type="text/xlang"&gt;
-  &lt;program&gt;
-    &lt;var name="name" value="'World'" /&gt;
-    &lt;print&gt;Hello, {name}!&lt;/print&gt;
-  &lt;/program&gt;
-&lt;/script&gt;</code></pre>
-      <h3>3. Open the .html file in a browser. Done.</h3>
-    </td>
-    <td width="40%">
-      <img src="https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif" alt="Get Started" width="100%" />
-    </td>
-  </tr>
+<tr>
+<td width="55%" valign="top">
+
+**1. Import the interpreter**
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"></script>
+```
+
+**2. Write your program**
+
+```html
+<script type="text/xlang">
+  <program>
+    <var name="name" value="'World'" />
+    <print>Hello, {name}!</print>
+  </program>
+</script>
+```
+
+**3. Open the `.html` file in a browser. Done.**
+
+</td>
+<td width="45%" valign="top">
+<img src="https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif" alt="Get Started" width="100%" />
+</td>
+</tr>
 </table>
 
----
+<br>
 
-## Complete Guide
+## Complete guide
 
-The README covers the essentials to get started. For the complete technical reference — all tags, OOP in detail, arrays, real-world use cases, best practices — check the complete guide.
+This README covers the essentials to get started. For the complete technical reference — every tag, OOP in detail, arrays, real-world use cases, best practices — check the complete guide:
 
-**[https://github.com/adilson889/Xlang/tree/main/examples]**
+**[github.com/adilson889/Xlang/tree/main/examples](https://github.com/adilson889/Xlang/tree/main/examples)**
 
----
+<br>
 
 ## Feedback
 
-**[https://adilsonrafael847@gmail.com]**
+**[adilsonrafael847@gmail.com](mailto:adilsonrafael847@gmail.com)**
 
----
+<br>
 
 ## License
 
-*(See the LICENSE file)*
+See the [LICENSE](./LICENSE) file.
+
+<div align="center">
+
+<br>
+
+`</XLang>`
+
+</div>
