@@ -9,6 +9,7 @@ class Scope {
         this.parent = parent;
         this.vars = new Map();
         this.funcs = new Map();
+        this.meta = null;
     }
 
     defineVar(name, entry) {
@@ -48,20 +49,32 @@ class Scope {
         }
         return undefined;
     }
+
+    // ===== NOVO: metadados de escopo (classe atual, classe pai p/ <super>) =====
+    findMeta(key) {
+        let s = this;
+        while (s) {
+            if (s.meta && Object.prototype.hasOwnProperty.call(s.meta, key)) return s.meta[key];
+            s = s.parent;
+        }
+        return undefined;
+    }
 }
 
 class XLangInterpreter {
     constructor(outputDiv) {
         this.outputDiv = outputDiv;
         this.globalFuncs = new Map();
+        this.classes = new Map(); // ===== NOVO =====
     }
 
     run(code) {
         this.globalFuncs = new Map();
+        this.classes = new Map(); // ===== NOVO =====
         const clean = code.replace(/<!--[\s\S]*?-->/g, '');
         const programMatch = clean.match(/<program[^>]*>([\s\S]*?)<\/program>/i);
         if (!programMatch) {
-            throw new Error('Tag <program> não encontrada.');
+            throw new Error('Missing <program> tag.');
         }
         const rootScope = new Scope(null);
         try {
@@ -78,6 +91,8 @@ class XLangInterpreter {
         for (let i = fromIndex; i < str.length; i++) {
             const c = str[i];
             if (inQuote) {
+                // ===== NOVO: \" ou \' dentro de um atributo não fecham a aspa =====
+                if (c === '\\') { i++; continue; }
                 if (c === inQuote) inQuote = null;
             } else if (c === '"' || c === "'") {
                 inQuote = c;
@@ -157,11 +172,18 @@ class XLangInterpreter {
         return statements;
     }
 
+    // ===== ALTERADO: agora entende \" e \' escapados dentro do valor =====
     getAttr(attrs, name) {
-        let m = attrs.match(new RegExp(name + '="([^"]*)"'));
-        if (m) return m[1];
-        m = attrs.match(new RegExp(name + "='([^']*)'"));
-        return m ? m[1] : null;
+        let m = attrs.match(new RegExp(name + '="((?:[^"\\\\]|\\\\.)*)"'));
+        if (m) return this.unescapeAttr(m[1]);
+        m = attrs.match(new RegExp(name + "='((?:[^'\\\\]|\\\\.)*)'"));
+        if (m) return this.unescapeAttr(m[1]);
+        return null;
+    }
+
+    // ===== NOVO =====
+    unescapeAttr(s) {
+        return s.replace(/\\(.)/g, '$1');
     }
 
     currentValue(entry) {
@@ -199,10 +221,14 @@ class XLangInterpreter {
     }
 
     // ---- evalExpr seguro: whitelist estrita, sem acesso a globals ----
+    // ===== ALTERADO: agora entende obj.campo e obj.metodo(...) =====
     evalExpr(expr, scope) {
         let out = '';
         let i = 0;
         const calledFuncs = new Set();
+        const methodCalls = new Map(); // ===== NOVO =====
+        let methodCounter = 0;
+        const callerClassName = scope.findMeta('currentClassName'); // ===== NOVO =====
         const ALLOWED_LITERALS = new Set(['true', 'false', 'null']);
 
         while (i < expr.length) {
@@ -218,30 +244,87 @@ class XLangInterpreter {
             const wordMatch = expr.substring(i).match(/^[A-Za-z_]\w*/);
             if (wordMatch) {
                 const word = wordMatch[0];
-                let k = i + word.length;
-                while (k < expr.length && /\s/.test(expr[k])) k++;
-                const isCall = expr[k] === '(';
 
-                if (ALLOWED_LITERALS.has(word)) {
+                // ===== NOVO: detecta cadeia obj.campo(.campo2...) =====
+                const chain = [word];
+                let scanPos = i + word.length;
+                while (true) {
+                    let p = scanPos;
+                    while (p < expr.length && /\s/.test(expr[p])) p++;
+                    if (expr[p] === '.') {
+                        const m2 = expr.substring(p + 1).match(/^[A-Za-z_]\w*/);
+                        if (m2) {
+                            chain.push(m2[0]);
+                            scanPos = p + 1 + m2[0].length;
+                            continue;
+                        }
+                    }
+                    break;
+                }
+                let afterChain = scanPos;
+                while (afterChain < expr.length && /\s/.test(expr[afterChain])) afterChain++;
+                const followedByParen = expr[afterChain] === '(';
+
+                if (chain.length === 1 && ALLOWED_LITERALS.has(word)) {
                     out += word;
-                } else if (isCall) {
+                    i = scanPos;
+                    continue;
+                }
+
+                if (chain.length === 1 && followedByParen) {
                     if (!scope.getFunc(word) && !this.globalFuncs.get(word)) {
-                        throw new Error(`Função XLang não definida: "${word}"`);
+                        throw new Error(`Undefined XLang function: "${word}"`);
                     }
                     calledFuncs.add(word);
                     out += word;
-                } else {
-                    const entry = scope.getVarEntry(word);
-                    if (entry === undefined) {
-                        throw new Error(`Identificador não permitido em expressão XLang: "${word}"`);
-                    }
-                    out += JSON.stringify(this.currentValue(entry));
+                    i = scanPos;
+                    continue;
                 }
-                i += word.length;
+
+                // ===== NOVO: chamada de método obj.metodo(...) =====
+                if (chain.length > 1 && followedByParen) {
+                    if (chain.length !== 2) {
+                        throw new Error(`Chained method calls not supported: "${chain.join('.')}"`);
+                    }
+                    const [objName, methodName] = chain;
+                    const entry = scope.getVarEntry(objName);
+                    if (entry === undefined) {
+                        throw new Error(`Identifier not allowed in XLang expression: "${objName}"`);
+                    }
+                    const receiver = this.currentValue(entry);
+                    const placeholder = `__m${methodCounter++}`;
+                    methodCalls.set(placeholder, { receiver, methodName });
+                    out += placeholder;
+                    i = scanPos;
+                    continue;
+                }
+
+                // ===== NOVO: leitura de campo obj.campo(.campo2...) =====
+                if (chain.length > 1) {
+                    const objName = chain[0];
+                    const entry = scope.getVarEntry(objName);
+                    if (entry === undefined) {
+                        throw new Error(`Identifier not allowed in XLang expression: "${objName}"`);
+                    }
+                    let val = this.currentValue(entry);
+                    for (let ci = 1; ci < chain.length; ci++) {
+                        val = (val !== null && val !== undefined) ? val[chain[ci]] : undefined;
+                    }
+                    out += JSON.stringify(val === undefined ? null : val);
+                    i = scanPos;
+                    continue;
+                }
+
+                const entry = scope.getVarEntry(word);
+                if (entry === undefined) {
+                    throw new Error(`Identifier not allowed in XLang expression: "${word}"`);
+                }
+                out += JSON.stringify(this.currentValue(entry));
+                i = scanPos;
                 continue;
             }
             if (!/[\s0-9+\-*/%()<>=!&|,.\[\]]/.test(c)) {
-                throw new Error(`Caractere não permitido em expressão XLang: "${c}"`);
+                throw new Error(`Character not allowed in XLang expression: "${c}"`);
             }
             out += c;
             i++;
@@ -253,6 +336,11 @@ class XLangInterpreter {
             paramNames.push(name);
             paramValues.push((...args) => this.callFunction(name, args, scope));
         });
+        // ===== NOVO =====
+        methodCalls.forEach((info, placeholder) => {
+            paramNames.push(placeholder);
+            paramValues.push((...args) => this.callMethod(info.receiver, info.methodName, args, callerClassName));
+        });
 
         const fn = new Function(...paramNames, 'return (' + out + ')');
         return fn.apply(undefined, paramValues);
@@ -260,7 +348,7 @@ class XLangInterpreter {
 
     callFunction(name, argValues, callerScope) {
         const def = callerScope.getFunc(name) || this.globalFuncs.get(name);
-        if (!def) throw new Error('Função não definida: ' + name);
+        if (!def) throw new Error('Undefined function: ' + name);
 
         const fnScope = new Scope(def.closureScope);
         def.params.forEach((p, idx) => {
@@ -273,6 +361,90 @@ class XLangInterpreter {
         } catch (e) {
             if (e instanceof ReturnSignal) return e.value;
             throw e;
+        }
+    }
+
+    // ===== NOVO: chama método de instância (com checagem de private) =====
+    callMethod(instance, methodName, argValues, callerClassName) {
+        if (!instance || !instance.__class) {
+            throw new Error(`Cannot call method "${methodName}" on this value.`);
+        }
+        const found = this.findMethod(instance.__class, methodName);
+        if (!found) {
+            throw new Error(`Undefined method: ${methodName}`);
+        }
+        if (found.def.isPrivate && found.ownerClass.name !== callerClassName) {
+            throw new Error(`Private method "${methodName}" cannot be called from here.`);
+        }
+
+        const methodScope = new Scope(found.ownerClass.declScope);
+        methodScope.meta = { currentClassName: found.ownerClass.name };
+        methodScope.defineVar('this', { type: 'value', value: instance, mutable: false });
+        found.def.params.forEach((p, idx) => {
+            methodScope.defineVar(p, { type: 'value', value: argValues[idx], mutable: true });
+        });
+
+        try {
+            this.executeBlock(this.parseStatements(found.def.body), methodScope);
+            return undefined;
+        } catch (e) {
+            if (e instanceof ReturnSignal) return e.value;
+            throw e;
+        }
+    }
+
+    // ===== NOVO: procura método subindo a cadeia de herança =====
+    findMethod(className, methodName) {
+        let cls = this.classes.get(className);
+        while (cls) {
+            if (cls.methods.has(methodName)) {
+                return { def: cls.methods.get(methodName), ownerClass: cls };
+            }
+            cls = cls.parentName ? this.classes.get(cls.parentName) : null;
+        }
+        return null;
+    }
+
+    // ===== NOVO: cria instância de classe =====
+    instantiate(className, argValues) {
+        const cls = this.classes.get(className);
+        if (!cls) throw new Error('Undefined class: ' + className);
+
+        const chain = [];
+        let c = cls;
+        while (c) {
+            chain.unshift(c);
+            c = c.parentName ? this.classes.get(c.parentName) : null;
+        }
+
+        const instance = { __class: className };
+        for (const c2 of chain) {
+            for (const f of c2.fields) {
+                const fieldScope = new Scope(c2.declScope);
+                let val;
+                try { val = this.evalExpr(f.valueExpr, fieldScope); }
+                catch { val = f.valueExpr; }
+                instance[f.name] = val;
+            }
+        }
+
+        this.runInit(cls, instance, argValues);
+        return instance;
+    }
+
+    // ===== NOVO: roda o <init> de uma classe (usado por instantiate e <super>) =====
+    runInit(cls, instance, argValues) {
+        if (!cls.initDef) return;
+        const initScope = new Scope(cls.declScope);
+        initScope.meta = { classForSuper: cls, currentClassName: cls.name };
+        initScope.defineVar('this', { type: 'value', value: instance, mutable: false });
+        cls.initDef.params.forEach((p, idx) => {
+            initScope.defineVar(p, { type: 'value', value: argValues[idx], mutable: true });
+        });
+        try {
+            this.executeBlock(this.parseStatements(cls.initDef.body), initScope);
+        } catch (e) {
+            if (!(e instanceof ReturnSignal)) throw e;
         }
     }
 
@@ -364,7 +536,7 @@ class XLangInterpreter {
                 const render = () => {
                     const text = rawText.replace(/{([^}]+)}/g, (match, expr) => {
                         try { return String(this.evalExpr(expr.trim(), scope)); }
-                        catch { return match; }
+                        catch (e) { return `[error: ${e.message}]`; }
                     });
                     // innerHTML: permite <br>, <hr>, <b>, etc. dentro do <print>.
                     // A interpolação {} já ocorreu acima, antes desta linha.
@@ -402,6 +574,12 @@ class XLangInterpreter {
                     const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
                     const result = this.callFunction(fnName, argValues, scope);
                     scope.defineVar(name, { type: 'value', value: result, mutable: tagName === 'var' });
+                } else if (rawValue.startsWith('<new')) { // ===== NOVO =====
+                    const className = this.getAttr(rawValue, 'class');
+                    const argsStr = this.getAttr(rawValue, 'args') || '';
+                    const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
+                    const instance = this.instantiate(className, argValues);
+                    scope.defineVar(name, { type: 'value', value: instance, mutable: tagName === 'var' });
                 } else {
                     let value;
                     try { value = this.evalExpr(rawValue, scope); }
@@ -411,19 +589,44 @@ class XLangInterpreter {
                 break;
             }
 
+            // ===== ALTERADO: agora aceita name="this.campo" e name="arr[i]" =====
             case 'set': {
                 const name = this.getAttr(attrs, 'name');
                 const rawValue = this.getAttr(attrs, 'value');
                 if (!name || rawValue === null) break;
 
-                const entry = scope.getVarEntry(name);
-                if (entry === undefined) break;
-                if (entry.mutable === false) {
-                    throw new Error('<set> não pode alterar "' + name + '": foi declarada com <val>.');
-                }
                 let value;
                 try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
+
+                const propMatch = name.match(/^([A-Za-z_]\w*)\.(\w+)$/);
+                if (propMatch) {
+                    const [, objName, propName] = propMatch;
+                    const entry = scope.getVarEntry(objName);
+                    if (entry === undefined) throw new Error(`Identifier not allowed: "${objName}"`);
+                    const obj = this.currentValue(entry);
+                    if (!obj || typeof obj !== 'object') throw new Error(`"${objName}" is not an object.`);
+                    obj[propName] = value;
+                    break;
+                }
+
+                const idxMatch = name.match(/^([A-Za-z_]\w*)\[(.+)\]$/);
+                if (idxMatch) {
+                    const [, arrName, idxExpr] = idxMatch;
+                    const entry = scope.getVarEntry(arrName);
+                    if (!entry || !Array.isArray(entry.value)) throw new Error(`"${arrName}" is not an array.`);
+                    let idx;
+                    try { idx = this.evalExpr(idxExpr, scope); }
+                    catch { idx = Number(idxExpr); }
+                    entry.value[idx] = value;
+                    break;
+                }
+
+                const entry = scope.getVarEntry(name);
+                if (entry === undefined) break;
+                if (entry.mutable === false) {
+                    throw new Error('<set> cannot modify "' + name + '": declared with <val>.');
+                }
                 scope.setVar(name, { type: 'value', value, mutable: true });
                 break;
             }
@@ -451,7 +654,7 @@ class XLangInterpreter {
 
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) {
-                    throw new Error(`"${name}" não é um array.`);
+                    throw new Error(`"${name}" is not an array.`);
                 }
 
                 let value;
@@ -468,10 +671,61 @@ class XLangInterpreter {
 
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) {
-                    throw new Error(`"${name}" não é um array.`);
+                    throw new Error(`"${name}" is not an array.`);
                 }
 
                 entry.value.pop();
+                break;
+            }
+
+            // ===== NOVO: unshift/shift/indexOf/remove =====
+            case 'unshift': {
+                const name = this.getAttr(attrs, 'name');
+                const rawValue = this.getAttr(attrs, 'value');
+                if (!name || rawValue === null) break;
+                const entry = scope.getVarEntry(name);
+                if (!entry || !Array.isArray(entry.value)) throw new Error(`"${name}" is not an array.`);
+                let value;
+                try { value = this.evalExpr(rawValue, scope); }
+                catch { value = rawValue; }
+                entry.value.unshift(value);
+                break;
+            }
+
+            case 'shift': {
+                const name = this.getAttr(attrs, 'name');
+                if (!name) break;
+                const entry = scope.getVarEntry(name);
+                if (!entry || !Array.isArray(entry.value)) throw new Error(`"${name}" is not an array.`);
+                entry.value.shift();
+                break;
+            }
+
+            case 'indexof': {
+                const name = this.getAttr(attrs, 'name');
+                const target = this.getAttr(attrs, 'target');
+                const rawValue = this.getAttr(attrs, 'value');
+                if (!name || !target || rawValue === null) break;
+                const entry = scope.getVarEntry(target);
+                if (!entry || !Array.isArray(entry.value)) throw new Error(`"${target}" is not an array.`);
+                let value;
+                try { value = this.evalExpr(rawValue, scope); }
+                catch { value = rawValue; }
+                const idx = entry.value.findIndex((v) => v === value);
+                scope.defineVar(name, { type: 'value', value: idx, mutable: true });
+                break;
+            }
+
+            case 'remove': {
+                const name = this.getAttr(attrs, 'name');
+                const indexAttr = this.getAttr(attrs, 'index');
+                if (!name || indexAttr === null) break;
+                const entry = scope.getVarEntry(name);
+                if (!entry || !Array.isArray(entry.value)) throw new Error(`"${name}" is not an array.`);
+                let idx;
+                try { idx = this.evalExpr(indexAttr, scope); }
+                catch { idx = Number(indexAttr); }
+                entry.value.splice(idx, 1);
                 break;
             }
 
@@ -482,10 +736,32 @@ class XLangInterpreter {
 
                 const entry = scope.getVarEntry(target);
                 if (!entry || !Array.isArray(entry.value)) {
-                    throw new Error(`"${target}" não é um array.`);
+                    throw new Error(`"${target}" is not an array.`);
                 }
 
                 scope.defineVar(name, { type: 'value', value: entry.value.length, mutable: true });
+                break;
+            }
+
+            // ===== NOVO: foreach =====
+            case 'foreach': {
+                const varName = this.getAttr(attrs, 'var');
+                const inName = this.getAttr(attrs, 'in');
+                if (!varName || !inName) break;
+                const entry = scope.getVarEntry(inName);
+                if (!entry || !Array.isArray(entry.value)) throw new Error(`"${inName}" is not an array.`);
+
+                for (const item of entry.value.slice()) {
+                    const iterScope = new Scope(scope);
+                    iterScope.defineVar(varName, { type: 'value', value: item, mutable: true });
+                    try {
+                        this.executeBlock(this.parseStatements(body), iterScope);
+                    } catch (e) {
+                        if (e instanceof BreakSignal) break;
+                        if (e instanceof ContinueSignal) continue;
+                        throw e;
+                    }
+                }
                 break;
             }
 
@@ -572,10 +848,99 @@ class XLangInterpreter {
             case 'override': {
                 const name = this.getAttr(attrs, 'name');
                 if (!this.globalFuncs.has(name)) {
-                    throw new Error(`<override fun> falhou: não existe <fun name="${name}"> para sobrescrever.`);
+                    throw new Error(`<override fun> failed: no <fun name="${name}"> exists to override.`);
                 }
                 const params = (this.getAttr(attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
                 this.globalFuncs.set(name, { name, params, body, closureScope: scope, isPrivate: false, isOverride: true });
+                break;
+            }
+
+            // ===== NOVO: call como statement solto, com suporte a target="obj" (método) =====
+            case 'call': {
+                const fnName = this.getAttr(attrs, 'name');
+                const argsStr = this.getAttr(attrs, 'args') || '';
+                const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
+                const targetName = this.getAttr(attrs, 'target');
+                if (targetName) {
+                    const entry = scope.getVarEntry(targetName);
+                    if (entry === undefined) throw new Error(`Identifier not allowed: "${targetName}"`);
+                    const receiver = this.currentValue(entry);
+                    this.callMethod(receiver, fnName, argValues, scope.findMeta('currentClassName'));
+                } else {
+                    this.callFunction(fnName, argValues, scope);
+                }
+                break;
+            }
+
+            // ===== NOVO: declaração de classe =====
+            case 'class': {
+                const name = this.getAttr(attrs, 'name');
+                if (!name) break;
+                const parentName = this.getAttr(attrs, 'extends');
+                const classStatements = this.parseStatements(body);
+
+                const fields = [];
+                let initDef = null;
+                const methods = new Map();
+
+                for (const stmt of classStatements) {
+                    if (stmt.tagName === 'var' || stmt.tagName === 'val') {
+                        const fname = this.getAttr(stmt.attrs, 'name');
+                        const fvalue = this.getAttr(stmt.attrs, 'value') || '';
+                        if (fname) fields.push({ name: fname, valueExpr: fvalue });
+                    } else if (stmt.tagName === 'init') {
+                        const params = (this.getAttr(stmt.attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
+                        initDef = { params, body: stmt.body };
+                    } else if (stmt.tagName === 'fun') {
+                        const mname = this.getAttr(stmt.attrs, 'name');
+                        const params = (this.getAttr(stmt.attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
+                        methods.set(mname, { name: mname, params, body: stmt.body, isPrivate: false });
+                    } else if (stmt.tagName === 'private') {
+                        const mname = this.getAttr(stmt.attrs, 'name');
+                        const params = (this.getAttr(stmt.attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
+                        methods.set(mname, { name: mname, params, body: stmt.body, isPrivate: true });
+                    } else if (stmt.tagName === 'override') {
+                        const mname = this.getAttr(stmt.attrs, 'name');
+                        const params = (this.getAttr(stmt.attrs, 'params') || '').split(',').map((p) => p.trim()).filter(Boolean);
+                        methods.set(mname, { name: mname, params, body: stmt.body, isPrivate: false, isOverride: true });
+                    }
+                }
+
+                if (parentName && !this.classes.has(parentName)) {
+                    throw new Error(`<class extends="${parentName}"> failed: parent class not defined (declare it first).`);
+                }
+
+                for (const [mname, def] of methods) {
+                    if (def.isOverride) {
+                        let found = false;
+                        let p = parentName ? this.classes.get(parentName) : null;
+                        while (p) {
+                            if (p.methods.has(mname)) { found = true; break; }
+                            p = p.parentName ? this.classes.get(p.parentName) : null;
+                        }
+                        if (!found) {
+                            throw new Error(`<override fun name="${mname}"> failed: no parent class defines this method.`);
+                        }
+                    }
+                }
+
+                this.classes.set(name, { name, parentName, fields, initDef, methods, declScope: scope });
+                break;
+            }
+
+            // ===== NOVO: <super args="..." /> dentro de <init> =====
+            case 'super': {
+                const cls = scope.findMeta('classForSuper');
+                if (!cls || !cls.parentName) {
+                    throw new Error('<super> can only be used inside <init> of a class with "extends".');
+                }
+                const parentCls = this.classes.get(cls.parentName);
+                if (!parentCls) throw new Error('Parent class not found: ' + cls.parentName);
+                const argsStr = this.getAttr(attrs, 'args') || '';
+                const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
+                const thisEntry = scope.getVarEntry('this');
+                if (!thisEntry) throw new Error('<super> called without "this" in scope.');
+                this.runInit(parentCls, thisEntry.value, argValues);
                 break;
             }
 
