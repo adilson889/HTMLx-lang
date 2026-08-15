@@ -102,6 +102,3 @@ The README covers the essentials to get started. For the complete technical refe
 ## License
 
 *(See the LICENSE file)*
-```
-
-**Agora com GIFs e tabelas bonitas!** 🚀
