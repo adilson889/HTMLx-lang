@@ -10,7 +10,7 @@ Tela de login com validação de credenciais.
 
 ## Código
 
-```
+```html
 <!DOCTYPE html>
 <html lang="pt">
 <head>
