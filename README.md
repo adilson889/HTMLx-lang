@@ -1,80 +1,79 @@
 # XLang
-
-**Programação usando as próprias tags HTML.**
+**Programming using HTML tags themselves.**
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/adilson889/Xlang/main/img/xlang.jpg" alt="XLang" width="400" />
 </p>
 
-Sem nova sintaxe pra aprender, sem compilador externo, sem build step. Se já sabes HTML, já sabes 90% da XLang — o resto é só um punhado de tags novas (`<var>`, `<if>`, `<loop>`, `<fun>`...) que se comportam exactamente como esperarias.
+No new syntax to learn, no external compiler, no build step. If you already know HTML, you already know 90% of XLang — the rest is just a handful of new tags (`<var>`, `<if>`, `<loop>`, `<fun>`...) that behave exactly as you would expect.
 
 ```html
 <script type="text/xlang">
   <program>
     <var name="a" value="5" />
     <var name="b" value="3" />
-    <print>Soma: {a + b}</print>
+    <print>Sum: {a + b}</print>
   </program>
 </script>
 ```
 
-Corre direto no navegador. Sem npm, sem bundler, sem transpilação. É HTML — e o HTML já é a tua interface.
+Runs directly in the browser. No npm, no bundler, no transpilation. It's HTML — and HTML is already your interface.
 
 ---
 
-## Por que XLang
+## Why XLang
 
-A maior parte das linguagens separa "o que se vê" de "o que corre". A XLang não separa — o `<program>` vive dentro da própria página, lê e escreve diretamente nos elementos que já lá estão (`id`, `<input>`, `<div>`), sem camada de tradução no meio.
+Most languages separate "what you see" from "what runs". XLang does not separate them — the `<program>` lives inside the page itself, reads and writes directly to the elements that are already there (`id`, `<input>`, `<div>`), with no translation layer in between.
 
 ```html
-<input type="number" id="idade" />
-<div id="resultado"></div>
+<input type="number" id="age" />
+<div id="result"></div>
 
 <script type="text/xlang">
   <program>
-    <val name="idade" value="<input type='number' />" />
-    <print id="resultado"> Tens {idade} anos </print>
+    <val name="age" value="<input type='number' />" />
+    <print id="result"> You are {age} years old </print>
   </program>
 </script>
 ```
 
 ---
 
-## Começar agora
+## Get Started
 
-1. Importa o interpretador:
+1. Import the interpreter:
 ```html
 <script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"></script>
 ```
 
-2. Escreve o teu programa dentro de `<script type="text/xlang">`:
+2. Write your program inside `<script type="text/xlang">`:
 ```html
 <script type="text/xlang">
   <program>
-    <var name="nome" value="'Mundo'" />
-    <print>Olá, {nome}!</print>
+    <var name="name" value="'World'" />
+    <print>Hello, {name}!</print>
   </program>
 </script>
 ```
 
-3. Abre o `.html` num navegador. Pronto.
+3. Open the `.html` file in a browser. Done.
 
 ---
 
-## O que já existe
+## What Already Exists
 
-- Variáveis (`var`, `val`, `set`)
-- Controlo de fluxo (`if` / `elseif` / `else`, `switch`)
+- Variables (`var`, `val`, `set`)
+- Control flow (`if` / `elseif` / `else`, `switch`)
 - Loops (`loop`, `for`, `foreach`, `break`, `continue`)
-- Funções (`fun`, `private fun`, `override fun`, recursão)
-- Arrays (`array`, `push`, `pop`, `foreach`, indexação)
-- Programação orientada a objetos (`class`, herança com `extends`, `super`, métodos privados)
-- Interpolação de expressões em qualquer lado (`{a + b}`, `{objeto.metodo()}`)
-- Sandboxing: nenhuma expressão XLang tem acesso a `window`, `document` ou APIs do browser fora do que a própria linguagem expõe
+- Functions (`fun`, `private fun`, `override fun`, recursion)
+- Arrays (`array`, `push`, `pop`, `foreach`, indexing)
+- Object-oriented programming (`class`, inheritance with `extends`, `super`, private methods)
+- Expression interpolation anywhere (`{a + b}`, `{object.method()}`)
+- Sandboxing: no XLang expression has access to `window`, `document` or browser APIs outside what the language itself exposes
 
-## Guia completo
+## Complete Guide
 
-O README cobre o essencial para começar. Para a referência técnica completa — todas as tags, POO em detalhe, arrays, casos de uso reais, boas práticas — consulta o guia completo.
+The README covers the essentials to get started. For the complete technical reference — all tags, OOP in detail, arrays, real-world use cases, best practices — check the complete guide.
 
  **[https://github.com/adilson889/Xlang/tree/main/examples]**
 ---
@@ -82,6 +81,6 @@ O README cobre o essencial para começar. Para a referência técnica completa �
 **[https://adilsonrafael847@gmail.com]**
 ---
 
-## Licença
+## License
 
-*(Veja o arquivo de LICENCE)*
+*(See the LICENSE file)*
