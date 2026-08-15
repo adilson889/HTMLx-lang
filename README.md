@@ -89,16 +89,16 @@
 
 The README covers the essentials to get started. For the complete technical reference — all tags, OOP in detail, arrays, real-world use cases, best practices — check the complete guide.
 
-
 **[Read the complete guide](https://github.com/adilson889/Xlang/tree/main/examples)**
 ---
 
 ## Feedback
 
-*https://adilsonrafael847@gmail.com*
+**https://adilsonrafael847@gmail.com**
 
 ---
 
 ## License
 
 *(See the LICENSE file)*
+```
