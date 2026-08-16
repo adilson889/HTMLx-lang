@@ -1,4 +1,4 @@
-# Lista de Tarefas com XLang
+# Task List with XLang
 
 ```html
 <!DOCTYPE html>
@@ -13,49 +13,49 @@
         .btn { background: #1877f2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 2px; }
         .btn-danger { background: #e74c3c; }
         .btn:hover { opacity: 0.9; }
-        #lista { margin-top: 15px; }
-        .tarefa { background: #f8f9fa; padding: 10px 15px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #1877f2; }
+        #list { margin-top: 15px; }
+        .task { background: #f8f9fa; padding: 10px 15px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #1877f2; }
     </style>
 </head>
 <body>
 
     <center>
         <div class="container">
-            <h3>Lista de Tarefas</h3>
+            <h3>Task List</h3>
             
             <script type="text/xlang">
             <program>
-                <array name="tarefas" value="[]" />
+                <array name="tasks" value="[]" />
 
-                <val name="novaTarefa" value="<input type='text' placeholder='Nova tarefa...' style='padding:10px; width:65%; border:1px solid #ddd; border-radius:5px;' />" />
+                <val name="newTask" value="<input type='text' placeholder='New task...' style='padding:10px; width:65%; border:1px solid #ddd; border-radius:5px;' />" />
 
-                <fun name="adicionar">
-                    <if condition="novaTarefa != ''">
-                        <push name="tarefas" value="novaTarefa" />
-                        <call name="renderizar" />
+                <fun name="add">
+                    <if condition="newTask != ''">
+                        <push name="tasks" value="newTask" />
+                        <call name="render" />
                     </if>
                 </fun>
 
-                <fun name="removerUltima">
-                    <pop name="tarefas" />
-                    <call name="renderizar" />
+                <fun name="removeLast">
+                    <pop name="tasks" />
+                    <call name="render" />
                 </fun>
 
-                <fun name="renderizar">
+                <fun name="render">
                     <var name="html" value="''" />
-                    <foreach var="t" in="tarefas">
-                        <set name="html" value="html + '<div class=&quot;tarefa&quot;>' + t + '</div>'" />
+                    <foreach var="t" in="tasks">
+                        <set name="html" value="html + '<div class=&quot;task&quot;>' + t + '</div>'" />
                     </foreach>
-                    <print id="lista">{html}</print>
+                    <print id="list">{html}</print>
                 </fun>
 
-                <call name="renderizar" />
+                <call name="render" />
             </program>
             </script>
 
-            <button class="btn" onclick="XLang.call('adicionar')">Adicionar</button>
-            <button class="btn btn-danger" onclick="XLang.call('removerUltima')">Remover</button>
-            <div id="lista"></div>
+            <button class="btn" onclick="XLang.call('add')">Add</button>
+            <button class="btn btn-danger" onclick="XLang.call('removeLast')">Remove</button>
+            <div id="list"></div>
         </div>
     </center>
 
