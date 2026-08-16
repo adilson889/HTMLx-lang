@@ -1,6 +1,5 @@
 // xlang-math.js - XLang Math Library v3.0
-// Cobre math.h quase por completo + subconjunto vetorizado do numpy
-// (vetores/matrizes de tamanho arbitrário, sem broadcasting N-dimensional).
+
 (function() {
     if (typeof window === 'undefined' || !window.XLangRegistry) return;
 
