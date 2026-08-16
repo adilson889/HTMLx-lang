@@ -1,4 +1,4 @@
-# Calculadora com XLang
+# Calculator with XLang
 
 ```html
 <!DOCTYPE html>
@@ -14,7 +14,7 @@
         .num { background: #555; color: white; }
         .op { background: #f39c12; color: white; }
         .clear { background: #e74c3c; color: white; }
-        .igual { background: #2ecc71; color: white; }
+        .equal { background: #2ecc71; color: white; }
     </style>
 </head>
 <body>
@@ -24,64 +24,64 @@
         
         <script type="text/xlang">
         <program>
-            <var name="valorAtual" value="''" />
-            <var name="valorAnterior" value="''" />
-            <var name="operacao" value="''" />
+            <var name="currentValue" value="''" />
+            <var name="previousValue" value="''" />
+            <var name="operation" value="''" />
 
-            <fun name="adicionarNumero" params="n">
-                <set name="valorAtual" value="valorAtual + n" />
-                <print id="display">{valorAtual}</print>
+            <fun name="addNumber" params="n">
+                <set name="currentValue" value="currentValue + n" />
+                <print id="display">{currentValue}</print>
             </fun>
 
-            <fun name="definirOperacao" params="op">
-                <set name="valorAnterior" value="valorAtual" />
-                <set name="valorAtual" value="''" />
-                <set name="operacao" value="op" />
+            <fun name="setOperation" params="op">
+                <set name="previousValue" value="currentValue" />
+                <set name="currentValue" value="''" />
+                <set name="operation" value="op" />
             </fun>
 
-            <fun name="calcular">
-                <if condition="operacao == '+'">
-                    <print id="display">{valorAnterior * 1 + valorAtual * 1}</print>
+            <fun name="calculate">
+                <if condition="operation == '+'">
+                    <print id="display">{previousValue * 1 + currentValue * 1}</print>
                 </if>
-                <elseif condition="operacao == '-'">
-                    <print id="display">{valorAnterior - valorAtual}</print>
+                <elseif condition="operation == '-'">
+                    <print id="display">{previousValue - currentValue}</print>
                 </elseif>
-                <elseif condition="operacao == '*'">
-                    <print id="display">{valorAnterior * valorAtual}</print>
+                <elseif condition="operation == '*'">
+                    <print id="display">{previousValue * currentValue}</print>
                 </elseif>
-                <elseif condition="operacao == '/'">
-                    <print id="display">{valorAnterior / valorAtual}</print>
+                <elseif condition="operation == '/'">
+                    <print id="display">{previousValue / currentValue}</print>
                 </elseif>
             </fun>
 
-            <fun name="limpar">
-                <set name="valorAtual" value="''" />
-                <set name="valorAnterior" value="''" />
-                <set name="operacao" value="''" />
+            <fun name="clear">
+                <set name="currentValue" value="''" />
+                <set name="previousValue" value="''" />
+                <set name="operation" value="''" />
                 <print id="display">0</print>
             </fun>
         </program>
         </script>
 
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '7')">7</button>
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '8')">8</button>
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '9')">9</button>
-        <button class="btn op" onclick="XLang.call('definirOperacao', '/')">÷</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '7')">7</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '8')">8</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '9')">9</button>
+        <button class="btn op" onclick="XLang.call('setOperation', '/')">÷</button>
         
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '4')">4</button>
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '5')">5</button>
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '6')">6</button>
-        <button class="btn op" onclick="XLang.call('definirOperacao', '*')">×</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '4')">4</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '5')">5</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '6')">6</button>
+        <button class="btn op" onclick="XLang.call('setOperation', '*')">×</button>
         
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '1')">1</button>
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '2')">2</button>
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '3')">3</button>
-        <button class="btn op" onclick="XLang.call('definirOperacao', '-')">-</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '1')">1</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '2')">2</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '3')">3</button>
+        <button class="btn op" onclick="XLang.call('setOperation', '-')">-</button>
         
-        <button class="btn clear" onclick="XLang.call('limpar')">C</button>
-        <button class="btn num" onclick="XLang.call('adicionarNumero', '0')">0</button>
-        <button class="btn igual" onclick="XLang.call('calcular')">=</button>
-        <button class="btn op" onclick="XLang.call('definirOperacao', '+')">+</button>
+        <button class="btn clear" onclick="XLang.call('clear')">C</button>
+        <button class="btn num" onclick="XLang.call('addNumber', '0')">0</button>
+        <button class="btn equal" onclick="XLang.call('calculate')">=</button>
+        <button class="btn op" onclick="XLang.call('setOperation', '+')">+</button>
     </div>
 
 </body>
