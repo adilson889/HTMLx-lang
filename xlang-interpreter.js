@@ -1251,4 +1251,4 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { XLangInterpreter, Scope, BreakSignal, ContinueSignal, ReturnSignal };
-}
+} 
