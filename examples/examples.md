@@ -1,18 +1,18 @@
-# Exemplos XLang
 
-> **Nota importante:** o `<script type="text/xlang">` só é processado quando
-> está dentro de `<body>`. Fora do `<body>` (ex: dentro de `<head>`), o
-> interpretador não encontra nem executa o programa. O
-> `<script src="...xlang-interpreter.js">` (que importa o interpretador em
-> si) pode ficar no `<head>` sem problema — só o `<program>` precisa estar
-> no `<body>`.
+# XLang Examples
 
-Todos os exemplos usam `<meta charset="UTF-8" />` para os acentos
-aparecerem corretamente.
+> **Important note:** the `<script type="text/xlang">` is only processed when
+> it is inside `<body>`. Outside `<body>` (e.g., inside `<head>`), the
+> interpreter does not find or execute the program. The
+> `<script src="...xlang-interpreter.js">` (which imports the interpreter
+> itself) can stay in the `<head>` without any problem — only the
+> `<program>` needs to be in the `<body>`.
+
+All examples use `<meta charset="UTF-8" />` for proper character encoding.
 
 ---
 
-## 1. Olá, mundo
+## 1. Hello, world
 
 ```html
 <!DOCTYPE html>
@@ -25,7 +25,7 @@ aparecerem corretamente.
 
     <script type="text/xlang">
     <program>
-        <print>Olá, mundo!</print>
+        <print>Hello, world!</print>
     </program>
     </script>
 
@@ -35,7 +35,7 @@ aparecerem corretamente.
 
 ---
 
-## 2. Variáveis e operações
+2. Variables and operations
 
 ```html
 <!DOCTYPE html>
@@ -50,8 +50,8 @@ aparecerem corretamente.
     <program>
         <var name="a" value="5" />
         <var name="b" value="3" />
-        <print>Soma: {a + b}<br/></print>
-        <print>Produto: {a * b}<br/></print>
+        <print>Sum: {a + b}<br/></print>
+        <print>Product: {a * b}<br/></print>
 
         <val name="pi" value="3.14" />
         <print>Pi: {pi}</print>
@@ -64,7 +64,7 @@ aparecerem corretamente.
 
 ---
 
-## 3. Condicionais
+3. Conditionals
 
 ```html
 <!DOCTYPE html>
@@ -77,13 +77,13 @@ aparecerem corretamente.
 
     <script type="text/xlang">
     <program>
-        <var name="idade" value="20" />
+        <var name="age" value="20" />
 
-        <if condition="idade >= 18">
-            <print>Maior de idade</print>
+        <if condition="age >= 18">
+            <print>Adult</print>
         </if>
         <else>
-            <print>Menor de idade</print>
+            <print>Minor</print>
         </else>
     </program>
     </script>
@@ -94,7 +94,7 @@ aparecerem corretamente.
 
 ---
 
-## 4. Loop com contador
+4. Loop with counter
 
 ```html
 <!DOCTYPE html>
@@ -124,7 +124,7 @@ aparecerem corretamente.
 
 ---
 
-## 5. `for` com step
+5. for with step
 
 ```html
 <!DOCTYPE html>
@@ -149,7 +149,7 @@ aparecerem corretamente.
 
 ---
 
-## 6. Funções e recursão (fatorial)
+6. Functions and recursion (factorial)
 
 ```html
 <!DOCTYPE html>
@@ -162,15 +162,15 @@ aparecerem corretamente.
 
     <script type="text/xlang">
     <program>
-        <fun name="fatorial" params="n">
+        <fun name="factorial" params="n">
             <if condition="n <= 1">
                 <return value="1" />
             </if>
-            <return value="n * fatorial(n - 1)" />
+            <return value="n * factorial(n - 1)" />
         </fun>
 
-        <print>Fatorial de 5: {fatorial(5)}<br/></print>
-        <print>Fatorial de 7: {fatorial(7)}<br/></print>
+        <print>Factorial of 5: {factorial(5)}<br/></print>
+        <print>Factorial of 7: {factorial(7)}<br/></print>
     </program>
     </script>
 
@@ -180,7 +180,7 @@ aparecerem corretamente.
 
 ---
 
-## 7. Arrays
+7. Arrays
 
 ```html
 <!DOCTYPE html>
@@ -193,14 +193,14 @@ aparecerem corretamente.
 
     <script type="text/xlang">
     <program>
-        <array name="frutas" value="['Maçã', 'Banana', 'Laranja']" />
-        <push name="frutas" value="'Uva'" />
+        <array name="fruits" value="['Apple', 'Banana', 'Orange']" />
+        <push name="fruits" value="'Grape'" />
 
-        <foreach var="fruta" in="frutas">
-            <print>{fruta}<br/></print>
+        <foreach var="fruit" in="fruits">
+            <print>{fruit}<br/></print>
         </foreach>
 
-        <length name="total" target="frutas" />
+        <length name="total" target="fruits" />
         <print>Total: {total}</print>
     </program>
     </script>
@@ -211,12 +211,13 @@ aparecerem corretamente.
 
 ---
 
-## 8. Formulário interativo (input em tempo real)
+8. Interactive form (real-time input)
 
-Os `<input>` **não são declarados no HTML** — a própria XLang cria os
-inputs a partir de `<val name="..." value="<input .../>" />`. Não repitas
-inputs "decorativos" no HTML por fora, senão terás dois conjuntos de campos
-onde só um deles (o criado pela XLang) está ligado ao cálculo.
+The <input> elements are not declared in the HTML — XLang itself
+creates the inputs from <val name="..." value="<input .../>" />. Do not
+repeat "decorative" inputs in the HTML outside, otherwise you will have
+two sets of fields where only one (created by XLang) is linked to the
+calculation.
 
 ```html
 <!DOCTYPE html>
@@ -228,34 +229,34 @@ onde só um deles (o criado pela XLang) está ligado ao cálculo.
 <body>
 
     <div style="border:1px solid #ccc; padding:10px; width:280px;">
-        <h3>Calculadora</h3>
+        <h3>Calculator</h3>
         <script type="text/xlang">
         <program>
             <val name="a" value="<input type='number' />" />
             <val name="b" value="<input type='number' />" />
 
-            <fun name="somar" params="x, y">
+            <fun name="sum" params="x, y">
                 <return value="x + y" />
             </fun>
 
-            <print id="resultado">Soma: {somar(a, b)}</print>
+            <print id="result">Sum: {sum(a, b)}</print>
         </program>
         </script>
-        <div id="resultado" style="margin-top:10px; font-weight:bold;"></div>
+        <div id="result" style="margin-top:10px; font-weight:bold;"></div>
     </div>
 
 </body>
 </html>
 ```
 
-Os dois `<input>` aparecem no lugar exato onde o `<script type="text/xlang">`
-está, na ordem em que são declarados (`a` primeiro, `b` depois). Escrever
-neles atualiza `{somar(a, b)}` em tempo real, sem precisar recarregar nem
-clicar em nada.
+The two <input> elements appear exactly where the <script
+type="text/xlang"> is, in the order they are declared (a first, b
+after). Typing in them updates {sum(a, b)} in real time, without
+reloading or clicking anything.
 
 ---
 
-## 9. Classes e objetos
+9. Classes and objects
 
 ```html
 <!DOCTYPE html>
@@ -268,23 +269,23 @@ clicar em nada.
 
     <script type="text/xlang">
     <program>
-        <class name="Pessoa">
-            <var name="nome" value="" />
-            <var name="idade" value="0" />
+        <class name="Person">
+            <var name="name" value="" />
+            <var name="age" value="0" />
 
-            <init params="nome, idade">
-                <set name="this.nome" value="nome" />
-                <set name="this.idade" value="idade" />
+            <init params="name, age">
+                <set name="this.name" value="name" />
+                <set name="this.age" value="age" />
             </init>
 
-            <fun name="cumprimentar">
-                <return value="'Olá, sou ' + this.nome" />
+            <fun name="greet">
+                <return value="'Hello, I am ' + this.name" />
             </fun>
         </class>
 
-        <var name="p" value="<new class='Pessoa' args=\"'Ana', 30\" />" />
-        <print>{p.cumprimentar()}<br/></print>
-        <print>Idade: {p.idade}</print>
+        <var name="p" value="<new class='Person' args=\"'Ana', 30\" />" />
+        <print>{p.greet()}<br/></print>
+        <print>Age: {p.age}</print>
     </program>
     </script>
 
@@ -294,7 +295,7 @@ clicar em nada.
 
 ---
 
-## 10. Herança
+10. Inheritance
 
 ```html
 <!DOCTYPE html>
@@ -308,23 +309,23 @@ clicar em nada.
     <script type="text/xlang">
     <program>
         <class name="Animal">
-            <var name="nome" value="" />
-            <init params="nome">
-                <set name="this.nome" value="nome" />
+            <var name="name" value="" />
+            <init params="name">
+                <set name="this.name" value="name" />
             </init>
-            <fun name="falar">
-                <return value="this.nome + ' faz um som'" />
+            <fun name="speak">
+                <return value="this.name + ' makes a sound'" />
             </fun>
         </class>
 
-        <class name="Cachorro" extends="Animal">
-            <override fun name="falar">
-                <return value="this.nome + ' late'" />
+        <class name="Dog" extends="Animal">
+            <override fun name="speak">
+                <return value="this.name + ' barks'" />
             </override>
         </class>
 
-        <var name="rex" value="<new class='Cachorro' args=\"'Rex'\" />" />
-        <print>{rex.falar()}</print>
+        <var name="rex" value="<new class='Dog' args=\"'Rex'\" />" />
+        <print>{rex.speak()}</print>
     </program>
     </script>
 
@@ -334,7 +335,7 @@ clicar em nada.
 
 ---
 
-## 11. Switch
+11. Switch
 
 ```html
 <!DOCTYPE html>
@@ -347,20 +348,20 @@ clicar em nada.
 
     <script type="text/xlang">
     <program>
-        <var name="dia" value="3" />
+        <var name="day" value="3" />
 
-        <switch value="dia">
+        <switch value="day">
             <case value="1">
-                <print>Segunda</print>
+                <print>Monday</print>
             </case>
             <case value="2">
-                <print>Terça</print>
+                <print>Tuesday</print>
             </case>
             <case value="3">
-                <print>Quarta</print>
+                <print>Wednesday</print>
             </case>
             <default>
-                <print>Outro dia</print>
+                <print>Other day</print>
             </default>
         </switch>
     </program>
@@ -372,11 +373,11 @@ clicar em nada.
 
 ---
 
-## 12. UI interativa — botão chama função XLang
+12. Interactive UI — button calls XLang function
 
-Botões e eventos HTML normais (`onclick`) podem chamar funções públicas da
-XLang através de `XLang.call(nome, args...)`. É a ponte entre a interface
-HTML comum e a lógica escrita em XLang.
+Normal HTML buttons and events (onclick) can call public XLang functions
+through XLang.call(name, args...). It is the bridge between the regular
+HTML interface and the logic written in XLang.
 
 ```html
 <!DOCTYPE html>
@@ -387,22 +388,22 @@ HTML comum e a lógica escrita em XLang.
 </head>
 <body>
 
-    <div id="contador_display">0</div>
-    <button onclick="XLang.call('incrementar')">+1</button>
-    <button onclick="XLang.call('decrementar')">-1</button>
+    <div id="counter_display">0</div>
+    <button onclick="XLang.call('increment')">+1</button>
+    <button onclick="XLang.call('decrement')">-1</button>
 
     <script type="text/xlang">
     <program>
-        <var name="contador" value="0" />
+        <var name="counter" value="0" />
 
-        <fun name="incrementar">
-            <set name="contador" value="contador + 1" />
-            <print id="contador_display">{contador}</print>
+        <fun name="increment">
+            <set name="counter" value="counter + 1" />
+            <print id="counter_display">{counter}</print>
         </fun>
 
-        <fun name="decrementar">
-            <set name="contador" value="contador - 1" />
-            <print id="contador_display">{contador}</print>
+        <fun name="decrement">
+            <set name="counter" value="counter - 1" />
+            <print id="counter_display">{counter}</print>
         </fun>
     </program>
     </script>
@@ -411,19 +412,19 @@ HTML comum e a lógica escrita em XLang.
 </html>
 ```
 
-Cada clique corre a função XLang, que atualiza a variável e reescreve o
-`<div id="contador_display">` — tudo dentro da própria XLang, disparado de
-fora por um evento HTML comum.
+Each click runs the XLang function, which updates the variable and
+rewrites the <div id="counter_display"> — all inside XLang itself,
+triggered from outside by a regular HTML event.
 
 ---
 
-## 13. Lista de tarefas (uso real)
+13. Task list (real use)
 
-Combina array, `foreach`, `push` e `XLang.call` num caso de uso comum.
-Nota: dentro de um `foreach`, monta-se a string completa antes de fazer um
-único `<print id="...">` no fim — cada `<print id="...">` **substitui** o
-conteúdo do elemento (não concatena), então chamar `<print>` várias vezes
-dentro do loop sobrescreveria a cada iteração.
+Combines array, foreach, push and XLang.call in a common use case.
+Note: inside a foreach, build the complete string before making a single
+<print id="..."> at the end — each <print id="..."> replaces the
+element content (does not concatenate), so calling <print> multiple times
+inside the loop would overwrite on each iteration.
 
 ```html
 <!DOCTYPE html>
@@ -435,29 +436,29 @@ dentro do loop sobrescreveria a cada iteração.
 <body>
 
     <div style="max-width:340px; font-family:sans-serif;">
-        <h3>Lista de tarefas</h3>
+        <h3>Task list</h3>
         <script type="text/xlang">
         <program>
-            <array name="tarefas" value="[]" />
+            <array name="tasks" value="[]" />
 
-            <val name="novaTarefa" value="<input type='text' placeholder='Nova tarefa' style='padding:6px; border:1px solid #ccc; border-radius:6px; width:180px;' />" />
+            <val name="newTask" value="<input type='text' placeholder='New task' style='padding:6px; border:1px solid #ccc; border-radius:6px; width:180px;' />" />
 
-            <fun name="adicionar">
-                <push name="tarefas" value="novaTarefa" />
-                <call name="renderizar" />
+            <fun name="add">
+                <push name="tasks" value="newTask" />
+                <call name="render" />
             </fun>
 
-            <fun name="renderizar">
+            <fun name="render">
                 <var name="html" value="''" />
-                <foreach var="t" in="tarefas">
+                <foreach var="t" in="tasks">
                     <set name="html" value="html + t + '<br/>'" />
                 </foreach>
-                <print id="lista">{html}</print>
+                <print id="list">{html}</print>
             </fun>
         </program>
         </script>
-        <button onclick="XLang.call('adicionar')" style="margin-left:6px; padding:6px 12px;">Adicionar</button>
-        <div id="lista" style="margin-top:10px;"></div>
+        <button onclick="XLang.call('add')" style="margin-left:6px; padding:6px 12px;">Add</button>
+        <div id="list" style="margin-top:10px;"></div>
     </div>
 
 </body>
@@ -466,11 +467,11 @@ dentro do loop sobrescreveria a cada iteração.
 
 ---
 
-## 14. Formulário com validação (uso real)
+14. Form with validation (real use)
 
-Um formulário de contacto com validação encadeada (`if` / `elseif` / `else`),
-funções auxiliares, e feedback visual — o tipo de lógica que normalmente
-precisaria de JavaScript à parte, tudo dentro da própria XLang.
+A contact form with chained validation (if / elseif / else), helper
+functions, and visual feedback — the kind of logic that would normally
+require separate JavaScript, all inside XLang itself.
 
 ```html
 <!DOCTYPE html>
@@ -482,33 +483,33 @@ precisaria de JavaScript à parte, tudo dentro da própria XLang.
 <body>
 
     <div style="max-width:320px; font-family:sans-serif;">
-        <h3>Contacto</h3>
+        <h3>Contact</h3>
         <script type="text/xlang">
         <program>
-            <val name="nome" value="<input type='text' placeholder='O teu nome' style='display:block; margin-bottom:8px; padding:8px; width:100%; border:1px solid #ccc; border-radius:6px;' />" />
-            <val name="email" value="<input type='email' placeholder='O teu email' style='display:block; margin-bottom:8px; padding:8px; width:100%; border:1px solid #ccc; border-radius:6px;' />" />
+            <val name="name" value="<input type='text' placeholder='Your name' style='display:block; margin-bottom:8px; padding:8px; width:100%; border:1px solid #ccc; border-radius:6px;' />" />
+            <val name="email" value="<input type='email' placeholder='Your email' style='display:block; margin-bottom:8px; padding:8px; width:100%; border:1px solid #ccc; border-radius:6px;' />" />
 
-            <fun name="validarEmail" params="e">
+            <fun name="validateEmail" params="e">
                 <if condition="e == ''">
                     <return value="false" />
                 </if>
                 <return value="true" />
             </fun>
 
-            <fun name="enviar">
-                <if condition="nome == ''">
-                    <print id="status" style="color:red;">Preenche o nome</print>
+            <fun name="send">
+                <if condition="name == ''">
+                    <print id="status" style="color:red;">Fill in the name</print>
                 </if>
-                <elseif condition="validarEmail(email) == false">
-                    <print id="status" style="color:red;">Email inválido</print>
+                <elseif condition="validateEmail(email) == false">
+                    <print id="status" style="color:red;">Invalid email</print>
                 </elseif>
                 <else>
-                    <print id="status" style="color:green;">Mensagem enviada, {nome}!</print>
+                    <print id="status" style="color:green;">Message sent, {name}!</print>
                 </else>
             </fun>
         </program>
         </script>
-        <button onclick="XLang.call('enviar')" style="padding:8px 16px;">Enviar</button>
+        <button onclick="XLang.call('send')" style="padding:8px 16px;">Send</button>
         <div id="status" style="margin-top:10px; font-weight:bold;"></div>
     </div>
 
@@ -516,6 +517,6 @@ precisaria de JavaScript à parte, tudo dentro da própria XLang.
 </html>
 ```
 
-A validação corre inteiramente no `<if>/<elseif>/<else>` da função
-`enviar`, chamando `validarEmail(email)` — outra função XLang — como parte
-da própria condição.
+The validation runs entirely in the <if>/<elseif>/<else> of the send
+function, calling validateEmail(email) — another XLang function — as part
+of the condition itself.
