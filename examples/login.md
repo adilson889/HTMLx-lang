@@ -1,18 +1,18 @@
-# Login com XLang
+# Login with XLang
 
-## Descrição
-Tela de login com validação de credenciais.
+## Description
+Login screen with credential validation.
 
-## Funcionalidades
-- Input de usuário e senha
-- Validação com condicionais
-- Feedback visual
+## Features
+- User and password input
+- Validation with conditionals
+- Visual feedback
 
-## Código
+## Code
 
 ```html
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -45,14 +45,14 @@ Tela de login com validação de credenciais.
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .titulo {
+        .title {
             color: white;
             font-size: 2em;
             margin-bottom: 10px;
             text-align: center;
         }
 
-        .subtitulo {
+        .subtitle {
             color: rgba(255, 255, 255, 0.7);
             text-align: center;
             margin-bottom: 30px;
@@ -87,7 +87,7 @@ Tela de login com validação de credenciais.
             .login-card {
                 padding: 25px;
             }
-            .titulo {
+            .title {
                 font-size: 1.5em;
             }
         }
@@ -96,30 +96,29 @@ Tela de login com validação de credenciais.
 <body>
 
     <div class="login-card">
-        <div class="titulo">Bem-vindo</div>
-        <div class="subtitulo">Faça login para continuar</div>
+        <div class="title">Welcome</div>
+        <div class="subtitle">Log in to continue</div>
         
         <script type="text/xlang">
         <program>
-            <val name="usuario" value="<input type='text' placeholder='Usuário' style='width:100%; padding:14px; border:2px solid rgba(255,255,255,0.3); border-radius:25px; font-size:14px; outline:none; margin-bottom:15px; background:rgba(255,255,255,0.1); color:white; transition:border-color 0.3s;' />" />
+            <val name="username" value="<input type='text' placeholder='Username' style='width:100%; padding:14px; border:2px solid rgba(255,255,255,0.3); border-radius:25px; font-size:14px; outline:none; margin-bottom:15px; background:rgba(255,255,255,0.1); color:white; transition:border-color 0.3s;' />" />
             
-            <val name="senha" value="<input type='password' placeholder='Senha' style='width:100%; padding:14px; border:2px solid rgba(255,255,255,0.3); border-radius:25px; font-size:14px; outline:none; margin-bottom:20px; background:rgba(255,255,255,0.1); color:white; transition:border-color 0.3s;' />" />
+            <val name="password" value="<input type='password' placeholder='Password' style='width:100%; padding:14px; border:2px solid rgba(255,255,255,0.3); border-radius:25px; font-size:14px; outline:none; margin-bottom:20px; background:rgba(255,255,255,0.1); color:white; transition:border-color 0.3s;' />" />
 
             <fun name="login">
-                <if condition="usuario == 'admin' && senha == '1234'">
-                    <print id="status" style="color:#4ade80;">Acesso liberado!</print>
+                <if condition="username == 'admin' && password == '1234'">
+                    <print id="status" style="color:#4ade80;">Access granted!</print>
                 </if>
                 <else>
-                    <print id="status" style="color:#f87171;">Usuário ou senha inválidos!</print>
+                    <print id="status" style="color:#f87171;">Invalid username or password!</print>
                 </else>
             </fun>
         </program>
         </script>
 
-        <button class="btn" onclick="XLang.call('login')">Entrar</button>
+        <button class="btn" onclick="XLang.call('login')">Login</button>
         <div id="status"></div>
     </div>
 
 </body>
 </html>
-```
