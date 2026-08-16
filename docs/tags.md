@@ -1,11 +1,11 @@
 # XLang Tags Reference
 
 ## Variables
-`| Tag | Syntax | Example |
+| Tag | Syntax | Example |
 |-----|--------|---------|
 | `<var>` | `<var name="x" value="5" />` | Mutable variable |
 | `<val>` | `<val name="x" value="5" />` | Immutable variable |
-| `<set>` | `<set name="x" value="10" />` | Update variable |`
+| `<set>` | `<set name="x" value="10" />` | Update variable |
 
 ## Output
 | Tag | Syntax | Example |
