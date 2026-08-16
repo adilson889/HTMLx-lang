@@ -1,4 +1,4 @@
-# Cadastro de Usuários com Classes OOP
+# User Registration with OOP Classes
 
 ```html
 <!DOCTYPE html>
@@ -12,57 +12,57 @@
         h3 { color: #333; }
         .btn { background: #1877f2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
         .btn:hover { opacity: 0.9; }
-        #lista { margin-top: 20px; text-align: left; }
-        .usuario { background: #f8f9fa; padding: 10px 15px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #2ecc71; }
+        #list { margin-top: 20px; text-align: left; }
+        .user { background: #f8f9fa; padding: 10px 15px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #2ecc71; }
     </style>
 </head>
 <body>
 
     <center>
         <div class="container">
-            <h3>Cadastro de Usuários</h3>
+            <h3>User Registration</h3>
             
             <script type="text/xlang">
             <program>
-                <class name="Usuario">
-                    <var name="nome" value="''" />
-                    <var name="idade" value="0" />
+                <class name="User">
+                    <var name="name" value="''" />
+                    <var name="age" value="0" />
 
-                    <init params="nome, idade">
-                        <set name="this.nome" value="nome" />
-                        <set name="this.idade" value="idade" />
+                    <init params="name, age">
+                        <set name="this.name" value="name" />
+                        <set name="this.age" value="age" />
                     </init>
 
-                    <fun name="apresentar">
-                        <return value="this.nome + ' - ' + this.idade + ' anos'" />
+                    <fun name="present">
+                        <return value="this.name + ' - ' + this.age + ' years'" />
                     </fun>
                 </class>
 
-                <array name="usuarios" value="[]" />
+                <array name="users" value="[]" />
 
-                <val name="novoNome" value="<input type='text' placeholder='Nome' style='padding:10px; width:65%; border:1px solid #ddd; border-radius:5px; margin-bottom:8px;' />" />
-                <val name="novaIdade" value="<input type='number' placeholder='Idade' style='padding:10px; width:65%; border:1px solid #ddd; border-radius:5px; margin-bottom:8px;' />" />
+                <val name="newName" value="<input type='text' placeholder='Name' style='padding:10px; width:65%; border:1px solid #ddd; border-radius:5px; margin-bottom:8px;' />" />
+                <val name="newAge" value="<input type='number' placeholder='Age' style='padding:10px; width:65%; border:1px solid #ddd; border-radius:5px; margin-bottom:8px;' />" />
 
-                <fun name="cadastrar">
-                    <if condition="novoNome != '' && novaIdade != ''">
-                        <var name="novoUsuario" value="<new class='Usuario' args='novoNome, novaIdade' />" />
-                        <push name="usuarios" value="novoUsuario" />
-                        <call name="renderizar" />
+                <fun name="register">
+                    <if condition="newName != '' && newAge != ''">
+                        <var name="newUser" value="<new class='User' args='newName, newAge' />" />
+                        <push name="users" value="newUser" />
+                        <call name="render" />
                     </if>
                 </fun>
 
-                <fun name="renderizar">
+                <fun name="render">
                     <var name="html" value="''" />
-                    <foreach var="u" in="usuarios">
-                        <set name="html" value="html + '<div class=&quot;usuario&quot;>' + u.apresentar() + '</div>'" />
+                    <foreach var="u" in="users">
+                        <set name="html" value="html + '<div class=&quot;user&quot;>' + u.present() + '</div>'" />
                     </foreach>
-                    <print id="lista">{html}</print>
+                    <print id="list">{html}</print>
                 </fun>
             </program>
             </script>
 
-            <button class="btn" onclick="XLang.call('cadastrar')">Cadastrar</button>
-            <div id="lista"></div>
+            <button class="btn" onclick="XLang.call('register')">Register</button>
+            <div id="list"></div>
         </div>
     </center>
 
