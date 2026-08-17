@@ -3,9 +3,15 @@
 ## Variables
 | Tag | Syntax | Example |
 |-----|--------|---------|
-| `<var>` | `<var name="x" value="5" />` | Mutable variable |
-| `<val>` | `<val name="x" value="5" />` | Immutable variable |
-| `<set>` | `<set name="x" value="10" />` | Update variable |
+| `<var>` | `<var name="x" value="5"></var>` | Mutable variable |
+| `<val>` | `<val name="x" value="5"></val>` | Immutable variable |
+| `<set>` | `<set name="x" value="10"></set>` | Update variable |
+
+## Binding
+| Tag | Syntax | Example |
+|-----|--------|---------|
+| `<bind>` (element) | `<bind target="id" as="name"></bind>` | Two-way bind to an input, or read/write bind to a text element |
+| `<bind>` (array) | `<bind target="id" source="arr"></bind>` | Reactive list/table bound to an array |
 
 ## Output
 | Tag | Syntax | Example |
@@ -29,8 +35,8 @@
 | `<loop>` | `<loop>` | Infinite loop |
 | `<for>` | `<for var="i" from="0" to="10" step="1">` | Counter loop |
 | `<foreach>` | `<foreach var="item" in="array">` | Array loop |
-| `<break>` | `<break />` | Exit loop |
-| `<continue>` | `<continue />` | Skip iteration |
+| `<break>` | `<break></break>` | Exit loop |
+| `<continue>` | `<continue></continue>` | Skip iteration |
 
 ## Functions
 | Tag | Syntax | Example |
@@ -38,46 +44,47 @@
 | `<fun>` | `<fun name="fn" params="a, b">` | Public function |
 | `<private fun>` | `<private fun name="fn" params="a">` | Private function |
 | `<override fun>` | `<override fun name="fn" params="a">` | Override function |
-| `<return>` | `<return value="expr" />` | Return value |
-| `<call>` | `<call name="fn" args="1, 2" />` | Call function |
+| `<return>` | `<return value="expr"></return>` | Return value |
+| `<call>` | `<call name="fn" args="1, 2"></call>` | Call function |
 
 ## Arrays
 | Tag | Syntax | Example |
 |-----|--------|---------|
-| `<array>` | `<array name="arr" value="[1, 2]" />` | Declare array |
-| `<push>` | `<push name="arr" value="3" />` | Add to end |
-| `<pop>` | `<pop name="arr" />` | Remove last |
-| `<shift>` | `<shift name="arr" />` | Remove first |
-| `<unshift>` | `<unshift name="arr" value="0" />` | Add to start |
-| `<indexOf>` | `<indexOf name="idx" target="arr" value="2" />` | Find index |
-| `<remove>` | `<remove name="arr" index="1" />` | Remove at index |
-| `<length>` | `<length name="len" target="arr" />` | Get length |
+| `<array>` | `<array name="arr" value="[1, 2]"></array>` | Declare array |
+| `<push>` | `<push name="arr" value="3"></push>` | Add to end |
+| `<pop>` | `<pop name="arr"></pop>` | Remove last |
+| `<shift>` | `<shift name="arr"></shift>` | Remove first |
+| `<unshift>` | `<unshift name="arr" value="0"></unshift>` | Add to start |
+| `<indexOf>` | `<indexOf name="idx" target="arr" value="2"></indexOf>` | Find index |
+| `<remove>` | `<remove name="arr" index="1"></remove>` | Remove at index |
+| `<length>` | `<length name="len" target="arr"></length>` | Get length |
 
 ## Classes
 | Tag | Syntax | Example |
 |-----|--------|---------|
 | `<class>` | `<class name="User" extends="Parent">` | Declare class |
 | `<init>` | `<init params="a, b">` | Constructor |
-| `<super>` | `<super args="a, b" />` | Call parent |
+| `<super>` | `<super args="a, b"></super>` | Call parent |
+| `<new>` | `<new class='User' args='a, b'>` | Instantiate |
 
 ## DOM
 | Tag | Syntax | Example |
 |-----|--------|---------|
-| `<on>` | `<on event="click" target="id" call="fn" />` | Event listener |
-| `<show>` | `<show target="id" />` | Show element |
-| `<hide>` | `<hide target="id" />` | Hide element |
-| `<add-class>` | `<add-class target="id" class="name" />` | Add CSS class |
-| `<remove-class>` | `<remove-class target="id" class="name" />` | Remove CSS class |
-| `<toggle-class>` | `<toggle-class target="id" class="name" />` | Toggle CSS class |
-| `<set-style>` | `<set-style target="id" property="css" value="val" />` | Set style |
+| `<on>` | `<on event="click" target="id" call="fn"></on>` | Event listener |
+| `<show>` | `<show target="id"></show>` | Show element |
+| `<hide>` | `<hide target="id"></hide>` | Hide element |
+| `<add-class>` | `<add-class target="id" class="name"></add-class>` | Add CSS class |
+| `<remove-class>` | `<remove-class target="id" class="name"></remove-class>` | Remove CSS class |
+| `<toggle-class>` | `<toggle-class target="id" class="name"></toggle-class>` | Toggle CSS class |
+| `<set-style>` | `<set-style target="id" property="css" value="val"></set-style>` | Set style |
 
 ## Error Handling
 | Tag | Syntax | Example |
 |-----|--------|---------|
 | `<try>` | `<try>` | Try block |
-| `<catch>` | `<catch>` | Catch errors |
+| `<catch>` | `<catch>` | Catch errors; caught message available as `{error}` |
 
 ## Imports
 | Tag | Syntax | Example |
 |-----|--------|---------|
-| `<from>` | `<from xlang import math />` | Import module |
+| `<from>` | `<from xlang import math></from>` | Import module |
