@@ -334,7 +334,172 @@ class XLangInterpreter {
             const raw = entry.el.value;
             return raw !== '' && !isNaN(raw) && raw.trim() !== '' ? Number(raw) : raw;
         }
+        if (entry.type === 'dom-bound') {
+            const raw = entry.readsValueProp
+                ? entry.el.value
+                : entry.el.textContent;
+            return raw !== '' && !isNaN(raw) && raw.trim() !== '' ? Number(raw) : raw;
+        }
+        if (entry.type === 'dom-attr') {
+            const raw = entry.el.getAttribute(entry.attrName);
+            if (raw === null) return undefined;
+            return raw !== '' && !isNaN(raw) && raw.trim() !== '' ? Number(raw) : raw;
+        }
         return entry.value;
+    }
+
+    // Elementos com propriedade .value nativa (input, textarea, select) leem/escrevem
+    // por .value; qualquer outro elemento (div, span, p, etc.) usa .textContent.
+    domBoundReadsValueProp(el) {
+        const tag = el.tagName.toLowerCase();
+        return tag === 'input' || tag === 'textarea' || tag === 'select';
+    }
+
+    // Evita vazamento de memoria: quando "el" e removido do DOM, chama
+    // onRemoved() (normalmente disconnect() de um MutationObserver) uma
+    // unica vez e para de observar.
+    watchForRemoval(el, onRemoved) {
+        if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+        const removalObserver = new MutationObserver(() => {
+            if (!document.contains(el)) {
+                removalObserver.disconnect();
+                onRemoved();
+            }
+        });
+        removalObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    writeDomBound(entry, value) {
+        if (entry.type === 'dom-attr') {
+            entry.el.setAttribute(entry.attrName, value === undefined || value === null ? '' : String(value));
+            return;
+        }
+        if (entry.readsValueProp) {
+            entry.el.value = value === undefined || value === null ? '' : String(value);
+        } else {
+            entry.el.textContent = value === undefined || value === null ? '' : String(value);
+        }
+    }
+
+    // Renderiza um array XLang dentro de um <ul>/<ol>/<table> (ou outro
+    // container), seguindo as regras de <bind source="...">:
+    // - array vazio -> limpa todos os filhos
+    // - <ul>/<ol>: cada item vira <li>; objeto usa o campo "nome" se
+    //   existir, senao o primeiro campo; tudo via textContent
+    // - <table>: cada item vira <tr>; objeto/array -> uma <td> por campo;
+    //   primitivo -> uma unica <td>
+    // - outro container: cada item vira um <span> filho, texto separado
+    renderBoundList(el, tag, arr) {
+        el.textContent = '';
+        if (!Array.isArray(arr) || arr.length === 0) return;
+
+        const itemToText = (item) => {
+            if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+                if (Object.prototype.hasOwnProperty.call(item, 'nome')) return String(item.nome);
+                const firstKey = Object.keys(item).find((k) => k !== '__class');
+                return firstKey !== undefined ? String(item[firstKey]) : '';
+            }
+            return String(item);
+        };
+
+        if (tag === 'ul' || tag === 'ol') {
+            arr.forEach((item) => {
+                const li = document.createElement('li');
+                li.textContent = itemToText(item);
+                el.appendChild(li);
+            });
+            return;
+        }
+
+        if (tag === 'table') {
+            const isObjectRows = arr.some((item) => item !== null && typeof item === 'object' && !Array.isArray(item));
+
+            let headerKeys = [];
+            if (isObjectRows) {
+                arr.forEach((item) => {
+                    if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+                        Object.keys(item).forEach((k) => {
+                            if (k !== '__class' && !headerKeys.includes(k)) headerKeys.push(k);
+                        });
+                    }
+                });
+
+                if (headerKeys.length > 0) {
+                    const thead = document.createElement('thead');
+                    const headRow = document.createElement('tr');
+                    headerKeys.forEach((k) => {
+                        const th = document.createElement('th');
+                        th.textContent = k;
+                        headRow.appendChild(th);
+                    });
+                    thead.appendChild(headRow);
+                    el.appendChild(thead);
+                }
+            }
+
+            const tbody = document.createElement('tbody');
+            arr.forEach((item) => {
+                const tr = document.createElement('tr');
+                let fields;
+                if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+                    fields = headerKeys.length > 0
+                        ? headerKeys.map((k) => (Object.prototype.hasOwnProperty.call(item, k) ? item[k] : ''))
+                        : Object.entries(item).filter(([key]) => key !== '__class').map(([, val]) => val);
+                } else if (Array.isArray(item)) {
+                    fields = item;
+                } else {
+                    fields = [item];
+                }
+                fields.forEach((field) => {
+                    const td = document.createElement('td');
+                    td.textContent = String(field);
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            el.appendChild(tbody);
+            return;
+        }
+
+        // fallback: div/span/outro container generico
+        arr.forEach((item) => {
+            const span = document.createElement('span');
+            span.textContent = itemToText(item);
+            el.appendChild(span);
+        });
+    }
+    // que um metodo mutador (push, pop, splice, etc.) ou um indice for
+    // escrito. Usado por <bind source="..."> para re-renderizar listas
+    // automaticamente, sem precisar de editar cada tag que muta arrays.
+    makeObservableArray(arr) {
+        const listeners = new Set();
+        const notify = () => listeners.forEach((fn) => fn());
+
+        const mutatingMethods = new Set(['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill']);
+
+        const proxy = new Proxy(arr, {
+            get(target, prop, receiver) {
+                if (prop === '__xlangObserve') {
+                    return (fn) => listeners.add(fn);
+                }
+                const value = Reflect.get(target, prop, receiver);
+                if (typeof value === 'function' && mutatingMethods.has(prop)) {
+                    return function (...args) {
+                        const result = value.apply(target, args);
+                        notify();
+                        return result;
+                    };
+                }
+                return value;
+            },
+            set(target, prop, value, receiver) {
+                const result = Reflect.set(target, prop, value, receiver);
+                notify();
+                return result;
+            }
+        });
+
+        return proxy;
     }
 
     splitTopLevel(str) {
@@ -717,6 +882,62 @@ class XLangInterpreter {
                     if (entry && entry.type === 'input') {
                         entry.el.addEventListener('input', render);
                     }
+                    if (entry && entry.type === 'dom-bound') {
+                        if (entry.readsValueProp) {
+                            entry.el.addEventListener('input', render);
+                            entry.el.addEventListener('change', render);
+                        } else {
+                            // div/span/etc nao disparam eventos nativos ao mudar
+                            // textContent por JS externo; observa mutacoes do DOM.
+                            const observer = new MutationObserver(render);
+                            observer.observe(entry.el, { childList: true, characterData: true, subtree: true });
+                            this.watchForRemoval(entry.el, () => observer.disconnect());
+                        }
+                    }
+                    if (entry && entry.type === 'dom-attr') {
+                        // data-* (ou qualquer atributo) tambem pode mudar por JS
+                        // externo; observa so o atributo relevante.
+                        const observer = new MutationObserver(render);
+                        observer.observe(entry.el, { attributes: true, attributeFilter: [entry.attrName] });
+                        this.watchForRemoval(entry.el, () => observer.disconnect());
+                    }
+                });
+                break;
+            }
+
+            case 'bind': {
+                const targetId = this.getAttr(attrs, 'target');
+                if (!targetId) break;
+                const el = document.getElementById(targetId);
+                if (!el) throw new Error(`<bind>: no element with id "${targetId}" found.`);
+
+                const sourceName = this.getAttr(attrs, 'source');
+
+                if (sourceName) {
+                    // modo lista: o elemento reflete um array XLang
+                    const entry = scope.getVarEntry(sourceName);
+                    if (!entry || !Array.isArray(entry.value)) {
+                        throw new Error(`<bind source="${sourceName}">: "${sourceName}" is not an array.`);
+                    }
+
+                    const tag = el.tagName.toLowerCase();
+                    const renderList = () => this.renderBoundList(el, tag, entry.value);
+                    renderList();
+
+                    if (typeof entry.value.__xlangObserve === 'function') {
+                        entry.value.__xlangObserve(renderList);
+                    }
+                    break;
+                }
+
+                // modo simples: acucar sintatico para <var name="{as}" value="#{target}" />
+                const asName = this.getAttr(attrs, 'as') || targetId;
+                const readsValueProp = this.domBoundReadsValueProp(el);
+                scope.defineVar(asName, {
+                    type: 'dom-bound',
+                    el,
+                    readsValueProp,
+                    mutable: true
                 });
                 break;
             }
@@ -728,6 +949,41 @@ class XLangInterpreter {
                 if (tagName === 'val' && scope.getVarEntry(name) !== undefined) break;
 
                 const rawValue = (this.getAttr(attrs, 'value') || '').trim();
+
+                if (rawValue.startsWith('#') && rawValue.length > 1) {
+                    const afterHash = rawValue.slice(1);
+                    // #id:data-attributo -> liga a um atributo (ex: data-*)
+                    // em vez de .value/.textContent
+                    const colonIdx = afterHash.indexOf(':');
+                    if (colonIdx !== -1) {
+                        const targetId = afterHash.slice(0, colonIdx);
+                        const attrName = afterHash.slice(colonIdx + 1);
+                        if (!targetId || !attrName) {
+                            throw new Error(`<${tagName}>: invalid value="#${afterHash}", expected format "#id:attribute".`);
+                        }
+                        const el = document.getElementById(targetId);
+                        if (!el) throw new Error(`<${tagName}>: no element with id "${targetId}" found for value="#${afterHash}".`);
+                        scope.defineVar(name, {
+                            type: 'dom-attr',
+                            el,
+                            attrName,
+                            mutable: tagName === 'var'
+                        });
+                        break;
+                    }
+
+                    const targetId = afterHash;
+                    const el = document.getElementById(targetId);
+                    if (!el) throw new Error(`<${tagName}>: no element with id "${targetId}" found for value="#${targetId}".`);
+                    const readsValueProp = this.domBoundReadsValueProp(el);
+                    scope.defineVar(name, {
+                        type: 'dom-bound',
+                        el,
+                        readsValueProp,
+                        mutable: tagName === 'var'
+                    });
+                    break;
+                }
 
                 const inputMatch = rawValue.match(/<input\b[^>]*\/?>/i);
                 if (inputMatch) {
@@ -806,6 +1062,10 @@ class XLangInterpreter {
                 if (entry.mutable === false) {
                     throw new Error('<set> cannot modify "' + name + '": declared with <val>.');
                 }
+                if (entry.type === 'dom-bound' || entry.type === 'dom-attr') {
+                    this.writeDomBound(entry, value);
+                    break;
+                }
                 scope.setVar(name, { type: 'value', value, mutable: true });
                 break;
             }
@@ -821,7 +1081,7 @@ class XLangInterpreter {
                     catch { value = []; }
                 }
 
-                scope.defineVar(name, { type: 'value', value, mutable: true });
+                scope.defineVar(name, { type: 'value', value: this.makeObservableArray(value), mutable: true });
                 break;
             }
 
@@ -1251,4 +1511,4 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { XLangInterpreter, Scope, BreakSignal, ContinueSignal, ReturnSignal };
-} 
+}
