@@ -20,7 +20,7 @@ Be respectful. Disagreements about design and implementation are welcome — per
 
 ## Pull Request Guidelines
 
-- PRs are made directly against `main`. There's no separate `dev` branch — for a project this size, an extra branch just adds sync overhead without a real benefit yet.
+- PRs are made directly against `main`. There's no separate `dev` branch — for a project this size, an extra branch just adds sync overhead without a real benefit yet. If you're unsure whether your idea fits, open a discussion issue first.
 - Small changes (bug fixes, documentation, examples) can go straight to a PR.
 - Changes to language syntax or parsing (a new tag, a change in how an existing tag behaves) should have an approved issue first. This avoids wasted work if the direction turns out to be different from what's needed.
 - Keep PRs focused — one fix or one feature per PR. Multiple small commits are fine; they don't need to be squashed manually.
@@ -28,7 +28,7 @@ Be respectful. Disagreements about design and implementation are welcome — per
 
 ### Manual testing
 
-There's no automated test suite yet, so testing is manual:
+There's no automated test suite yet, so testing is manual. This is a known limitation — contributions to help set up a test runner are very welcome!
 
 - Open the changed or added `.html` example directly in a browser.
 - Confirm the XLang code runs and produces the expected output, with no errors in the console.
@@ -36,12 +36,12 @@ There's no automated test suite yet, so testing is manual:
 
 ## Development Setup
 
-XLang has no build step and no dependencies to install. Clone the repo and open any `.html` file directly in a browser, or serve the folder with any static file server if you need `fetch`-based imports (`<from xlang import ... />`) to work — some browsers restrict `fetch` on `file://` URLs.
+XLang has no build step and no dependencies to install. Clone the repo and open any `.html` file directly in a browser, or serve the folder with any static file server if you need `fetch`-based imports (`<from xlang import ... />`) to work — some browsers restrict `fetch` on `file://` URLs. If you have ideas for a better dev server or automation setup, contributions are welcome.
 
 ```
 $ git clone https://github.com/adilson889/Xlang.git
 $ cd Xlang
-$ npx serve .   # or any other static file server
+$ npx serve .   # or any other static file server, e.g. python -m http.server
 ```
 
 ## Project Structure
