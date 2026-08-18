@@ -1,6 +1,6 @@
 {
   "name": "xlang-interpreter",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "XLang - HTML framework with programming logic using tags",
   "main": "xlang-interpreter.js",
   "types": "xlang-interpreter.d.ts",
