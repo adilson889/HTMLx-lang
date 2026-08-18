@@ -249,10 +249,17 @@ class XLangInterpreter {
             throw new Error('<import> requires xlang-bootstrap.js to be loaded.');
         }
         for (const stmt of importStatements) {
-            const from = this.getAttr(stmt.attrs, 'from');
-            const name = this.getAttr(stmt.attrs, 'name');
+            let name = this.getAttr(stmt.attrs, 'name') || this.getAttr(stmt.attrs, 'modules');
+            let from = this.getAttr(stmt.attrs, 'from');
+
+            if (name && name.includes('.') && !from) {
+                const parts = name.split('.');
+                name = parts.pop();
+                from = parts.join('.');
+            }
+
             if (!name) {
-                throw new Error('<import> requires a "name" attribute.');
+                throw new Error('<import> requires a "name" or "modules" attribute (e.g. modules="xlang.math").');
             }
             await window.XLangBootstrap.resolve(from || 'xlang', name);
         }
@@ -394,20 +401,25 @@ class XLangInterpreter {
     }
 
     currentValue(entry) {
-        if (!entry) return undefined;
-        if (entry.type === 'input') {
-            const raw = entry.el.value;
-            return raw !== '' && !isNaN(raw) && raw.trim() !== '' ? Number(raw) : raw;
+    if (!entry) return undefined;
+    if (entry.type === 'input') {
+        const raw = entry.el.value;
+        if (entry.el.type === 'number' && raw !== '' && !isNaN(raw) && raw.trim() !== '') {
+            return Number(raw);
         }
-        if (entry.type === 'dom-bound') {
-            const raw = entry.readsValueProp
-                ? entry.el.value
-                : entry.el.textContent;
-            return raw !== '' && !isNaN(raw) && raw.trim() !== '' ? Number(raw) : raw;
-        }
-        return entry.value;
+        return raw;
     }
-
+    if (entry.type === 'dom-bound') {
+        const raw = entry.readsValueProp
+            ? entry.el.value
+            : entry.el.textContent;
+        if (entry.el.type === 'number' && raw !== '' && !isNaN(raw) && raw.trim() !== '') {
+            return Number(raw);
+        }
+        return raw;
+    }
+    return entry.value;
+}
     domBoundReadsValueProp(el) {
         const tag = el.tagName.toLowerCase();
         return tag === 'input' || tag === 'textarea' || tag === 'select';
@@ -1466,7 +1478,10 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
         const divBlocks = document.querySelectorAll('div[data-xlang]');
         for (const blocoEl of divBlocks) {
-            const codigo = blocoEl.innerHTML;
+            const codigo = blocoEl.innerHTML
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>');
             blocoEl.innerHTML = '';
             await runXLangBlock(
                 blocoEl,
@@ -1475,7 +1490,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
                 index++
             );
         }
-
         const scripts = document.querySelectorAll('script[type="text/xlang"]');
         for (const scriptEl of scripts) {
             await runXLangBlock(
