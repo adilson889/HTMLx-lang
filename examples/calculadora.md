@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <script src="https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/xlang-interpreter.js"></script>
+    <script src="https://cd......./xlang-interpreter.js"></script>
     <style>
         body { font-family: Arial; display: flex; justify-content: center; margin-top: 50px; background: #f0f2f5; }
         .calc { background: #333; padding: 20px; border-radius: 15px; width: 280px; }
