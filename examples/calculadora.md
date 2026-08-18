@@ -1,6 +1,3 @@
-# Calculator with XLang
-
-```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -21,22 +18,21 @@
 
     <div class="calc">
         <div id="display">0</div>
-        
-        <script type="text/xlang">
-        <program>
-            <var name="currentValue" value="''" />
-            <var name="previousValue" value="''" />
-            <var name="operation" value="''" />
+
+        <div data-xlang>
+            <var name="currentValue" value="''"></var>
+            <var name="previousValue" value="''"></var>
+            <var name="operation" value="''"></var>
 
             <fun name="addNumber" params="n">
-                <set name="currentValue" value="currentValue + n" />
+                <set name="currentValue" value="currentValue + n"></set>
                 <print id="display">{currentValue}</print>
             </fun>
 
             <fun name="setOperation" params="op">
-                <set name="previousValue" value="currentValue" />
-                <set name="currentValue" value="''" />
-                <set name="operation" value="op" />
+                <set name="previousValue" value="currentValue"></set>
+                <set name="currentValue" value="''"></set>
+                <set name="operation" value="op"></set>
             </fun>
 
             <fun name="calculate">
@@ -55,29 +51,28 @@
             </fun>
 
             <fun name="clear">
-                <set name="currentValue" value="''" />
-                <set name="previousValue" value="''" />
-                <set name="operation" value="''" />
+                <set name="currentValue" value="''"></set>
+                <set name="previousValue" value="''"></set>
+                <set name="operation" value="''"></set>
                 <print id="display">0</print>
             </fun>
-        </program>
-        </script>
+        </div>
 
         <button class="btn num" onclick="XLang.call('addNumber', '7')">7</button>
         <button class="btn num" onclick="XLang.call('addNumber', '8')">8</button>
         <button class="btn num" onclick="XLang.call('addNumber', '9')">9</button>
         <button class="btn op" onclick="XLang.call('setOperation', '/')">÷</button>
-        
+
         <button class="btn num" onclick="XLang.call('addNumber', '4')">4</button>
         <button class="btn num" onclick="XLang.call('addNumber', '5')">5</button>
         <button class="btn num" onclick="XLang.call('addNumber', '6')">6</button>
         <button class="btn op" onclick="XLang.call('setOperation', '*')">×</button>
-        
+
         <button class="btn num" onclick="XLang.call('addNumber', '1')">1</button>
         <button class="btn num" onclick="XLang.call('addNumber', '2')">2</button>
         <button class="btn num" onclick="XLang.call('addNumber', '3')">3</button>
         <button class="btn op" onclick="XLang.call('setOperation', '-')">-</button>
-        
+
         <button class="btn clear" onclick="XLang.call('clear')">C</button>
         <button class="btn num" onclick="XLang.call('addNumber', '0')">0</button>
         <button class="btn equal" onclick="XLang.call('calculate')">=</button>
