@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Help
+    url: https://github.com/adilson889/Xlang/discussions
+    about: General questions about using XLang are better suited for Discussions.
+  - name: Community Chat
+    url: https://chat.whatsapp.com/IYKUFRfOg8O4HpYHavYg3u
+    about: Join the WhatsApp group to ask quick questions and chat with other users.
+  - name: Security Vulnerability
+    url: https://github.com/adilson889/Xlang/blob/main/docs/SECURITY.md
+    about: Please do not report security vulnerabilities through public issues.
