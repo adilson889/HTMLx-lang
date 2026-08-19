@@ -1,0 +1,45 @@
+name: Feature Request
+description: Propose a new tag, native function, or a change to how XLang behaves.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If this changes XLang's syntax or the behavior of an existing tag, please
+        open this issue **before** submitting a PR — see [CONTRIBUTING.md](https://github.com/adilson889/Xlang/blob/main/docs/CONTRIBUTING.md).
+        Syntax changes affect everyone using XLang, so they're worth discussing first.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case, not just the tag/function name you want.
+      placeholder: >
+        Right now there's no way to bind a dropdown's selected option back to
+        a variable without writing a <bind> plus manual JS...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed syntax
+      description: How would this look as XLang tags? A short example is enough.
+      render: html
+      placeholder: |
+        <select id="opcao"></select>
+
+        <div data-xlang>
+            <bind target="opcao" as="escolha" options="lista"></bind>
+        </div>
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other way to achieve this with tags that already exist?
+    validations:
+      required: false
