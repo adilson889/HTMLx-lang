@@ -79,6 +79,22 @@
 | `<toggle-class>` | `<toggle-class target="id" class="name"></toggle-class>` | Toggle CSS class |
 | `<set-style>` | `<set-style target="id" property="css" value="val"></set-style>` | Set style |
 
+## Storage
+| Tag | Syntax | Example |
+|-----|--------|---------|
+| `<storage-set>` | `<storage-set key="name" value="'Ana'"></storage-set>` | Save a value to localStorage |
+| `<storage-get>` | `<storage-get key="name" as="savedName"></storage-get>` | Load a value from localStorage |
+| `<storage-get>` with default | `<storage-get key="theme" as="theme" default="'light'"></storage-get>` | Load a value, or use a default if missing |
+| `<storage-remove>` | `<storage-remove key="name"></storage-remove>` | Remove one key |
+| `<storage-clear>` | `<storage-clear></storage-clear>` | Remove all HTMLx-lang keys |
+
+Notes:
+
+- Keys are automatically prefixed with `htmlx:` internally.
+- Values are stored and retrieved with JSON serialization.
+- `storage-clear` only removes keys created by HTMLx-lang.
+- `key` accepts dynamic expressions, for example `key="'user_' + userId"`.
+
 ## Error Handling
 | Tag | Syntax | Example |
 |-----|--------|---------|
