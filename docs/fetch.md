@@ -198,7 +198,8 @@ Important notes
 
 Summary
 
-· <fetch> makes HTTP requests
+· <fetch> makes HTTP requests 
+
 · as stores the response object
 · The response contains ok, status, and data
 · JSON is parsed automatically
