@@ -1,4 +1,5 @@
-# XLang Tags Reference
+
+# HTMLx-lang Tags Reference
 
 ## Variables
 | Tag | Syntax | Example |
@@ -87,4 +88,7 @@
 ## Imports
 | Tag | Syntax | Example |
 |-----|--------|---------|
-| `<from>` | `<from xlang import math></from>` | Import module |
+| `<import>` | `<import name="xlang.math"></import>` | Import module |
+| `<import>` | `<import from="xlang" name="math"></import>` | Import module |
+| `<import>` | `<import modules="xlang.math"></import>` | Import module |
+```
