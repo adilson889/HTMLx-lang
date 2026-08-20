@@ -1,12 +1,10 @@
 # Control Flow
 
-Control flow is how a program makes decisions — running one block of code
-instead of another, depending on a condition.
+Control flow is how a program makes decisions — running one block of code instead of another, depending on a condition.
 
 ## Expressions, quickly
 
-Before diving into `if`, it helps to know what you can write inside a
-`condition="..."` attribute. XLang supports:
+Before diving into `if`, it helps to know what you can write inside a `condition="..."` attribute. XLang supports:
 
 - Arithmetic: `+  -  *  /  %`
 - Comparison: `==  !=  >  <  >=  <=`
@@ -17,13 +15,11 @@ Before diving into `if`, it helps to know what you can write inside a
 <print>{10 > 5 && 2 < 3}</print>
 ```
 
-One thing worth knowing: `+` does double duty. Between two numbers, it
-adds. Between two strings, it concatenates. `'a' + 'b'` gives you `'ab'`.
+One thing worth knowing: `+` does double duty. Between two numbers, it adds. Between two strings, it concatenates. `'a' + 'b'` gives you `'ab'`.
 
 ## if / elseif / else
 
-This works exactly the way you'd expect from any programming language —
-just written as tags instead of curly braces.
+This works exactly the way you'd expect from any programming language — just written as tags instead of curly braces.
 
 ```html
 <if condition="x > 10">
@@ -37,14 +33,11 @@ just written as tags instead of curly braces.
 </else>
 ```
 
-XLang checks `if` first. If it's false, it checks the next `elseif` (you
-can have several in a row). If none of them match, `else` runs. Only one
-branch ever executes.
+XLang checks `if` first. If it's false, it checks the next `elseif` (you can have several in a row). If none of them match, `else` runs. Only one branch ever executes.
 
 ## switch
 
-Use `switch` when you're comparing one value against several possible
-exact matches — it reads cleaner than a long chain of `elseif`.
+Use `switch` when you're comparing one value against several possible exact matches — it reads cleaner than a long chain of `elseif`.
 
 ```html
 <switch value="option">
@@ -60,13 +53,11 @@ exact matches — it reads cleaner than a long chain of `elseif`.
 </switch>
 ```
 
-If `option` matches none of the `<case>` values, `<default>` runs (if you
-included one).
+If `option` matches none of the `<case>` values, `<default>` runs (if you included one).
 
 ## A complete example
 
-Putting `<bind>`, `if`/`else`, and `<print>` together — a simple login
-check:
+Putting `<bind>`, `if`/`else`, and `<print>` together — a simple login check:
 
 ```html
 <input id="username" type="text" placeholder="Username" />
@@ -91,8 +82,7 @@ check:
 </div>
 ```
 
-(`<fun>` and `<on>` are covered in **Functions** and **DOM Manipulation** —
-you don't need to fully understand them yet to see the shape of the `if`.)
+(`<fun>` and `<on>` are covered in **Functions** and **DOM Manipulation** — you don't need to fully understand them yet to see the shape of the `if`.)
 
 ## Next step
 
