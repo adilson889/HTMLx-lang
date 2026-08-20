@@ -183,7 +183,7 @@ Complete example
 <head>
     <meta charset="UTF-8" />
     <title>LocalStorage Example</title>
-    <script src="xlang-interpreter.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/xlang-interpreter.js"></script>
 </head>
 <body>
 
