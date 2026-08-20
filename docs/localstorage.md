@@ -227,6 +227,7 @@ Complete example
 Summary
 
 · <storage-set> saves a value
+
 · <storage-get> loads a value into a variable
 · <storage-remove> removes one key
 · <storage-clear> removes all HTMLx-lang keys
