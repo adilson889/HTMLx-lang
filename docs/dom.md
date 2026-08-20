@@ -1,6 +1,7 @@
+
 # DOM Manipulation
 
-These tags let your XLang code react to what the user does, and directly
+These tags let your HTMLx-lang code react to what the user does, and directly
 manipulate how elements look — without writing any JavaScript yourself.
 
 ## The toolbox
@@ -20,7 +21,7 @@ they never fail silently, which makes typos easy to catch.
 
 ## `<on>` — listening for events
 
-`<on>` connects a DOM event (like a click) to an XLang function:
+`<on>` connects a DOM event (like a click) to an HTMLx-lang function:
 
 ```html
 <button id="btnSave">Save</button>
@@ -34,11 +35,11 @@ they never fail silently, which makes typos easy to catch.
 </div>
 ```
 
-The `event` attribute accepts any standard DOM event name — `click`,
-`input`, `change`, `submit`, and so on. Use `input` when you want to react
+The event attribute accepts any standard DOM event name — click,
+input, change, submit, and so on. Use input when you want to react
 to every keystroke rather than a discrete click.
 
-## A complete toggle example
+A complete toggle example
 
 Putting several of these tags together — a menu that shows/hides on
 click:
@@ -65,11 +66,11 @@ click:
 </div>
 ```
 
-Every click flips `visible` and shows/hides `content` accordingly.
+Every click flips visible and shows/hides content accordingly.
 
-## Styling dynamically
+Styling dynamically
 
-`set-style` accepts an expression, which makes it useful for things like
+set-style accepts an expression, which makes it useful for things like
 progress bars:
 
 ```html
@@ -79,25 +80,25 @@ progress bars:
 <set-style target="bar" property="width" value="progress + '%'"></set-style>
 ```
 
-## Calling XLang from plain HTML or JavaScript
+Calling HTMLx-lang from plain HTML or JavaScript
 
 Sometimes you have a regular HTML button (or plain JavaScript code) that
-needs to trigger something written in XLang, from *outside* any
-`<div data-xlang>` block. There's a global bridge for that:
+needs to trigger something written in HTMLx-lang, from outside any
+<div data-xlang> block. There's a global bridge for that:
 
 ```html
 <button onclick="XLang.call('increment')">+1</button>
 ```
 
-`XLang.call('functionName')` looks up a public function with that name in
-any `<div data-xlang>` block on the page and runs it — this is your
-one-way door from the "outside world" (plain HTML/JS) into XLang. Prefer
-`<on>` when the XLang block already knows which element should trigger the
-event; reach for `XLang.call` only when the trigger genuinely lives outside
-XLang's own markup.
+XLang.call('functionName') looks up a public function with that name in
+any <div data-xlang> block on the page and runs it — this is your
+one-way door from the "outside world" (plain HTML/JS) into HTMLx-lang. Prefer
+<on> when the HTMLx-lang block already knows which element should trigger the
+event; reach for XLang.call only when the trigger genuinely lives outside
+HTMLx-lang's own markup.
 
-## Next step
+Next step
 
 You now have the full toolkit — variables, control flow, loops, functions,
-arrays, and DOM interaction. From here, explore **Native Functions** for
+arrays, and DOM interaction. From here, explore Native Functions for
 built-in helpers you don't have to write yourself.
