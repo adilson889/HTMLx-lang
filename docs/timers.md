@@ -90,6 +90,7 @@ The counter increments every second.
 Notes
 
 · Both tags close explicitly: <after ...></after>, <every ...></every>
+
 · The interval starts immediately when the page loads
 · To control the interval, use a variable and a condition inside the function
 · Errors inside the called function are logged to the console
