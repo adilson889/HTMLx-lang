@@ -99,8 +99,7 @@ Notes
 Summary
 
 · <after> — setTimeout
+
 · <every> — setInterval
 · Both use ms and call
 · Both are children, loaded automatically
-
-```
