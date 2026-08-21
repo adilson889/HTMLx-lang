@@ -3,7 +3,7 @@
 
 # 2. Task List
 
-```markdown
+
 # Task List Example
 
 A responsive task manager using reactive arrays.
