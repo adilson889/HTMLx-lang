@@ -2,7 +2,6 @@
 
 # 3. Fetch Users
 
-```markdown
 # Fetch Users Example
 
 Load users from an API and display them in a reactive list.
