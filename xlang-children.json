@@ -1,1 +1,6 @@
-{}
+{
+  "children": [
+    "children/timers.js",
+    "children/clipboard.js"
+  ]
+}
