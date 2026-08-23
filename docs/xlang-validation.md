@@ -1,8 +1,12 @@
-# xlang-validation — Referencia
 
-Lib de validacao de formularios, dados de entrada, e regras de negocio
-comuns. Segue o mesmo padrao da `xlang-math`: funcoes nativas registadas
-via `R.register`, com validacao de argumentos e mensagens de erro claras.
+# xlang-validation — Reference
+
+Validation library for forms, input data, and common business rules.
+
+Follows the same pattern as `xlang-math`: native functions registered via
+`R.register`, with argument validation and clear error messages.
+
+---
 
 ## Import
 
@@ -10,7 +14,7 @@ via `R.register`, com validacao de argumentos e mensagens de erro claras.
 <import name="validation"></import>
 ```
 
-Registro no `xlang-modules.json`:
+Registration in xlang-modules.json:
 
 ```json
 {
@@ -18,139 +22,131 @@ Registro no `xlang-modules.json`:
 }
 ```
 
-## Presenca / vazio
+---
 
-| Funcao | Assinatura | Devolve |
-|---|---|---|
-| `isEmpty` | `isEmpty(val)` | `true` se `val` for `null`/`undefined`, string vazia (apos trim), array vazio, ou objeto sem chaves |
-| `isNotEmpty` | `isNotEmpty(val)` | oposto de `isEmpty` |
-| `isNull` | `isNull(val)` | `true` se `null` ou `undefined` |
-| `isNotNull` | `isNotNull(val)` | oposto de `isNull` |
+Presence / Empty
 
-## Texto
+Function Signature Returns
+isEmpty isEmpty(val) true if val is null/undefined, empty string (after trim), empty array, or object with no keys
+isNotEmpty isNotEmpty(val) opposite of isEmpty
+isNull isNull(val) true if null or undefined
+isNotNull isNotNull(val) opposite of isNull
 
-| Funcao | Assinatura | Devolve |
-|---|---|---|
-| `isEmail` | `isEmail(val)` | `true` se `val` tiver formato de email |
-| `isUrl` | `isUrl(val)` | `true` se `val` for uma URL valida |
-| `isAlpha` | `isAlpha(val)` | `true` se `val` so tiver letras e espacos (inclui acentos) |
-| `isAlphanumeric` | `isAlphanumeric(val)` | `true` se `val` so tiver letras e numeros |
-| `isNumeric` | `isNumeric(val)` | `true` se `val` (string) representar um numero |
-| `minLength` | `minLength(val, n)` | `true` se `val.length >= n` |
-| `maxLength` | `maxLength(val, n)` | `true` se `val.length <= n` |
-| `lengthBetween` | `lengthBetween(val, min, max)` | `true` se o tamanho estiver no intervalo |
-| `matchesPattern` | `matchesPattern(val, pattern)` | `true` se `val` bater com a regex `pattern` (string) |
-| `equalsIgnoreCase` | `equalsIgnoreCase(a, b)` | compara duas strings ignorando maiusculas/minusculas |
+---
 
-## Numeros
+Text
 
-| Funcao | Assinatura | Devolve |
-|---|---|---|
-| `isInteger` | `isInteger(val)` | `true` se `val` for inteiro |
-| `isPositive` | `isPositive(val)` | `true` se `val > 0` |
-| `isNegative` | `isNegative(val)` | `true` se `val < 0` |
-| `inRange` | `inRange(val, min, max)` | `true` se `val` estiver entre `min` e `max` (inclusive) |
+Function Signature Returns
+isEmail isEmail(val) true if val has email format
+isUrl isUrl(val) true if val is a valid URL
+isAlpha isAlpha(val) true if val only has letters and spaces
+isAlphanumeric isAlphanumeric(val) true if val only has letters and numbers
+isNumeric isNumeric(val) true if val represents a number
+minLength minLength(val, n) true if val.length >= n
+maxLength maxLength(val, n) true if val.length <= n
+lengthBetween lengthBetween(val, min, max) true if length is within range
+matchesPattern matchesPattern(val, pattern) true if val matches regex pattern
+equalsIgnoreCase equalsIgnoreCase(a, b) compares two strings ignoring case
 
-## Telefone
+---
 
-| Funcao | Assinatura | Devolve |
-|---|---|---|
-| `isPhone` | `isPhone(val)` | `true` se `val` tiver 7 a 15 digitos, aceita `+`, espacos, hifens, parenteses |
+Numbers
 
-Nao valida formato especifico de pais — so estrutura generica.
+Function Signature Returns
+isInteger isInteger(val) true if val is integer
+isPositive isPositive(val) true if val > 0
+isNegative isNegative(val) true if val < 0
+inRange inRange(val, min, max) true if val is between min and max inclusive
 
-## Senha
+---
 
-| Funcao | Assinatura | Devolve |
-|---|---|---|
-| `isStrongPassword` | `isStrongPassword(val)` | `true` se tiver 8+ caracteres, maiuscula, minuscula, digito e simbolo |
-| `passwordsMatch` | `passwordsMatch(a, b)` | `true` se as duas strings forem iguais |
+Phone
 
-## Cartao / documentos
+Function Signature Returns
+isPhone isPhone(val) true if val has 7 to 15 digits, accepts +, spaces, hyphens, parentheses
 
-| Funcao | Assinatura | Devolve |
-|---|---|---|
-| `isValidLuhn` | `isValidLuhn(val)` | `true` se `val` passar o algoritmo de Luhn (usado em cartoes de credito e outros documentos numericos) |
+Does not validate country-specific format — only generic structure.
 
-## Arrays
+---
 
-| Funcao | Assinatura | Devolve |
-|---|---|---|
-| `hasDuplicates` | `hasDuplicates(arr)` | `true` se houver valores repetidos |
-| `allValid` | `allValid(arr, "nomeDaFuncao")` | `true` se `nomeDaFuncao` devolver truthy para todos os itens |
-| `anyValid` | `anyValid(arr, "nomeDaFuncao")` | `true` se `nomeDaFuncao` devolver truthy para pelo menos um item |
+Password
 
-`nomeDaFuncao` e' o nome de qualquer funcao ja registada no XLang (nativa,
-de outra lib, ou tua), passado como string.
+Function Signature Returns
+isStrongPassword isStrongPassword(val) true if it has 8+ characters, uppercase, lowercase, digit and symbol
+passwordsMatch passwordsMatch(a, b) true if both strings are equal
 
-## validateForm — validar varios campos de uma vez
+---
 
-A funcao mais util da lib. Recebe uma lista de regras e devolve uma lista
-de mensagens de erro (vazia se tudo estiver valido).
+Card / Documents
+
+Function Signature Returns
+isValidLuhn isValidLuhn(val) true if val passes the Luhn algorithm
+
+---
+
+Arrays
+
+Function Signature Returns
+hasDuplicates hasDuplicates(arr) true if there are repeated values
+allValid allValid(arr, "functionName") true if functionName returns truthy for all items
+anyValid anyValid(arr, "functionName") true if functionName returns truthy for at least one item
+
+functionName is the name of any function already registered in XLang,
+passed as a string.
+
+---
+
+validateForm — validate multiple fields at once
+
+Receives a list of rules and returns a list of error messages.
 
 ```html
 <import name="validation"></import>
 
 <div data-xlang>
-    <var name="email" value="'nao-e-email'"></var>
-    <var name="senha" value="'fraca'"></var>
+    <var name="email" value="'not-an-email'"></var>
+    <var name="password" value="'weak'"></var>
 
-    <array name="regras" value="[
-        { campo: 'email', valor: email, validador: 'isEmail', mensagem: 'Email invalido' },
-        { campo: 'senha', valor: senha, validador: 'isStrongPassword', mensagem: 'Senha fraca demais' }
-    ]"></array>
+    <var name="errors" value="validateForm([
+        { field: 'email', value: email, validator: 'isEmail', message: 'Invalid email' },
+        { field: 'password', value: password, validator: 'isStrongPassword', message: 'Password too weak' }
+    ])"></var>
 
-    <var name="erros" value="validateForm(regras)"></var>
-
-    <print>{erros}</print>
+    <print>{errors}</print>
 </div>
 ```
 
-Cada regra e' um objeto com:
+Each rule has:
 
-| Campo | Obrigatorio | O que e' |
-|---|---|---|
-| `valor` | sim | o valor a validar |
-| `validador` | sim | nome (string) de uma funcao de validacao ja registada, ex: `'isEmail'` |
-| `campo` | nao | nome do campo, usado so se `mensagem` nao for definida |
-| `mensagem` | nao | mensagem de erro customizada. Se omitida, usa `"campo: invalid value."` |
+Field Required Description
+value yes value to validate
+validator yes name of a registered validation function
+field no field name, used only if message is not set
+message no custom error message
 
-Se `validador` apontar para uma funcao que nao existe, `validateForm`
-lanca erro (para apanhares erros de digitacao cedo). Se a propria
-validacao lancar erro internamente (ex: tipo errado), essa regra conta
-como invalida em vez de rebentar o formulario inteiro.
+---
 
-## Combinar com o teste de login
-
-Exemplo pratico, a validar antes de tentar autenticar:
+Login example
 
 ```html
 <fun name="login">
-    <array name="regras" value="[
-        { campo: 'username', valor: username, validador: 'isNotEmpty', mensagem: 'Utilizador obrigatorio' },
-        { campo: 'password', valor: password, validador: 'isNotEmpty', mensagem: 'Senha obrigatoria' }
-    ]"></array>
+    <var name="errors" value="validateForm([
+        { field: 'username', value: username, validator: 'isNotEmpty', message: 'Username required' },
+        { field: 'password', value: password, validator: 'isNotEmpty', message: 'Password required' }
+    ])"></var>
 
-    <var name="erros" value="validateForm(regras)"></var>
-
-    <if condition="erros.length > 0">
-        <print id="statusMsg">{erros[0]}</print>
+    <if condition="errors.length > 0">
+        <print id="statusMsg">{errors[0]}</print>
     </if>
     <else>
         <if condition="username == 'admin' && password == '1234'">
-            <print id="statusMsg">Acesso liberado</print>
+            <print id="statusMsg">Access granted</print>
         </if>
         <else>
-            <print id="statusMsg">Usuario ou senha invalidos</print>
+            <print id="statusMsg">Invalid username or password</print>
         </else>
     </else>
 </fun>
 ```
 
-## Erros comuns
-
-| Erro | Causa |
-|---|---|
-| `"X" must be a string` | passaste numero/objeto/array a uma funcao que espera texto |
-| `validator function "X" not found` | erro de digitacao no nome passado a `validador`, `allValid` ou `anyValid` |
-| `invalid regular expression` | o `pattern` passado a `matchesPattern` nao e' uma regex valida |
+```
