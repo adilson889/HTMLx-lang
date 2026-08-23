@@ -1,6 +1,9 @@
 {
   "children": [
+    "children/state.js",
     "children/timers.js",
-    "children/state.js"
+    "children/js-bridge.js"
   ]
 }
+
+
