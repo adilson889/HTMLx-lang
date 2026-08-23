@@ -1,26 +1,4 @@
-// children/js-bridge.js
-//
-// Bridge generico: expoe as funcoes de qualquer objeto/namespace JS
-// (ja carregado globalmente, ex: window._ do lodash) como funcoes
-// nativas do XLang, com prefixo, sem escrever um wrapper por funcao.
-//
-// Uso tipico (via xlang-bootstrap.js + xlang-modules.json):
-//
-//   "lodash": {
-//       "cdn": "https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js",
-//       "global": "_",
-//       "prefix": "lodash"
-//   }
-//
-// Depois de <import name="lodash"></import>, fica disponivel:
-//   lodash_capitalize('ola mundo')
-//   lodash_debounce(...)
-//   etc, para cada funcao do objeto global apontado.
-//
-// Limitacoes conscientes:
-// - So funciona bem para libs utilitarias (funcoes puras ou quase-puras).
-// - Nao serve para libs com ciclo de vida/estado proprio (React, Vue),
-//   essas continuam a precisar de um child escrito a mao.
+
 
 (function () {
     if (typeof window === 'undefined' || !window.XLangRegistry) return;
