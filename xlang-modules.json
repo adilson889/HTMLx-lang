@@ -1,3 +1,9 @@
 {
-  "math": "https://cdn.jsdelivr.net/gh/adilson889/Xlang@main/modules/xlang-math.js"
+  "math": "https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/modules/xlang-math.js",
+  "validation": "https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/modules/xlang-validation.js",
+  "lodash": {
+    "cdn": "https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js",
+    "global": "_",
+    "prefix": "lodash"
+  }
 }
