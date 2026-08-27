@@ -1,4 +1,3 @@
-
 # HTMLx-lang Documentation
 
 Welcome to the official HTMLx-lang documentation.
@@ -36,9 +35,7 @@ Learn the core building blocks.
 
 Connect your logic to the page.
 
-- [Binding to HTML](binding.md)
-- [Reactive Lists and Tables](reactive-lists.md)
-- [DOM Manipulation](dom-manipulation.md)
+- [DOM Manipulation](dom.md)
 
 ---
 
@@ -46,9 +43,18 @@ Connect your logic to the page.
 
 Features that work without imports.
 
-- [Storage](storage.md)
+- [LocalStorage](localstorage.md)
 - [Fetch](fetch.md)
+- [Timers](timers.md)
 - [Native Functions](native-functions.md)
+
+---
+
+## Advanced Features
+
+Object-oriented programming, error handling, and modules.
+
+- [Validation](xlang-validation.md)
 
 ---
 
@@ -56,19 +62,16 @@ Features that work without imports.
 
 Quick lookup for every tag and function.
 
-- [Tags Reference](tags-reference.md)
-- [API Reference](api-reference.md)
+- [Tags Reference](tags.md)
+- [API Reference](api.md)
 
 ---
 
-## Examples
+## Contributing & Community
 
-Real working examples.
-
-- [Calculator](examples/calculator.md)
-- [Login](examples/login.md)
-- [Task List](examples/task-list.md)
-- [Loading Users with Fetch](examples/fetch-users.md)
+- [Contributing Guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
 
 ---
 
@@ -77,10 +80,12 @@ Real working examples.
 A complete HTMLx-lang block:
 
 ```html
-<div data-xlang>
+<script type="text/XLang">
+<program>
     <var name="x" value="10"></var>
     <print>Hello {x}</print>
-</div>
+</program>
+</script>
 ```
 
 No JavaScript. No build. Just HTML that runs.
