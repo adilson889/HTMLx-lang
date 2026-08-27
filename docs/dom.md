@@ -1,4 +1,3 @@
-
 # DOM Manipulation
 
 These tags let your HTMLx-lang code react to what the user does, and directly
@@ -26,13 +25,15 @@ they never fail silently, which makes typos easy to catch.
 ```html
 <button id="btnSave">Save</button>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <fun name="save">
         <print id="status">Saved!</print>
     </fun>
 
     <on event="click" target="btnSave" call="save"></on>
-</div>
+</program>
+</script>
 ```
 
 The event attribute accepts any standard DOM event name — click,
@@ -48,7 +49,8 @@ click:
 <button id="button">Menu</button>
 <div id="content">Hidden</div>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <var name="visible" value="false"></var>
 
     <fun name="toggle">
@@ -63,7 +65,8 @@ click:
     </fun>
 
     <on event="click" target="button" call="toggle"></on>
-</div>
+</program>
+</script>
 ```
 
 Every click flips visible and shows/hides content accordingly.
@@ -77,21 +80,25 @@ progress bars:
 <var name="progress" value="40"></var>
 <div id="bar"></div>
 
-<set-style target="bar" property="width" value="progress + '%'"></set-style>
+<script type="text/xlang">
+<program>
+    <set-style target="bar" property="width" value="progress + '%'"></set-style>
+</program>
+</script>
 ```
 
 Calling HTMLx-lang from plain HTML or JavaScript
 
 Sometimes you have a regular HTML button (or plain JavaScript code) that
 needs to trigger something written in HTMLx-lang, from outside any
-<div data-xlang> block. There's a global bridge for that:
+<script type="text/xlang"><program> block. There's a global bridge for that:
 
 ```html
 <button onclick="XLang.call('increment')">+1</button>
 ```
 
 XLang.call('functionName') looks up a public function with that name in
-any <div data-xlang> block on the page and runs it — this is your
+any <script type="text/xlang"><program> block on the page and runs it — this is your
 one-way door from the "outside world" (plain HTML/JS) into HTMLx-lang. Prefer
 <on> when the HTMLx-lang block already knows which element should trigger the
 event; reach for XLang.call only when the trigger genuinely lives outside
