@@ -1,7 +1,6 @@
 # Login Example
 
 A responsive login screen with validation.
-
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -121,21 +120,23 @@ A responsive login screen with validation.
         <button id="btnLogin">Login</button>
         <div id="status"></div>
 
-        <div data-xlang>
-            <bind target="username" as="username"></bind>
-            <bind target="password" as="password"></bind>
+        <script type="text/xlang">
+            <program>
+                <bind target="username" as="username"></bind>
+                <bind target="password" as="password"></bind>
 
-            <fun name="login">
-                <if condition="username == 'admin' && password == '1234'">
-                    <print id="status" style="color:#4ade80;">Access granted!</print>
-                </if>
-                <else>
-                    <print id="status" style="color:#f87171;">Invalid username or password!</print>
-                </else>
-            </fun>
+                <fun name="login">
+                    <if condition="username == 'admin' && password == '1234'">
+                        <print id="status" style="color:#4ade80;">Access granted!</print>
+                    </if>
+                    <else>
+                        <print id="status" style="color:#f87171;">Invalid username or password!</print>
+                    </else>
+                </fun>
 
-            <on event="click" target="btnLogin" call="login"></on>
-        </div>
+                <on event="click" target="btnLogin" call="login"></on>
+            </program>
+        </script>
     </div>
 
 </body>
