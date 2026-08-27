@@ -136,7 +136,8 @@ Save and load data with localStorage.
 
         <div id="result"></div>
 
-        <div data-xlang>
+        <script type="text/xlang">
+        <program>
             <bind target="note" as="note"></bind>
 
             <fun name="save">
@@ -157,8 +158,10 @@ Save and load data with localStorage.
             <on event="click" target="btnSave" call="save"></on>
             <on event="click" target="btnLoad" call="load"></on>
             <on event="click" target="btnClear" call="clear"></on>
-        </div>
+        </program>
+        </script>
     </div>
 
 </body>
 </html>
+```
