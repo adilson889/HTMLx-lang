@@ -1,4 +1,3 @@
-
 # First Program
 
 Let's write something small but complete — a program that stores a value,
@@ -8,13 +7,15 @@ possible scale.
 
 ## Step 1 — the container
 
-Every piece of HTMLx-lang code lives inside a `<div data-xlang>`. Start with an
+Every piece of HTMLx-lang code lives inside a `<script type="text/xlang"><program>`. Start with an
 empty one:
 
 ```html
-<div data-xlang>
+<script type="text/xlang">
+<program>
 
-</div>
+</program>
+</script>
 ```
 
 Nothing happens yet — there's no code inside it.
@@ -25,9 +26,11 @@ Step 2 — store a value
 value into:
 
 ```html
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <var name="name" value="'World'"></var>
-</div>
+</program>
+</script>
 ```
 
 Notice the value is wrapped in two layers of quotes: the outer "..." is
@@ -43,13 +46,15 @@ Step 3 — show it
 value into the text:
 
 ```html
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <var name="name" value="'World'"></var>
     <print>Hello, {name}!</print>
-</div>
+</program>
+</script>
 ```
 
-Open this in a browser, and where the <div> used to be, you'll see:
+Open this in a browser, and where the <script type="text/xlang"><program> used to be, you'll see:
 
 ```
 Hello, World!
@@ -63,10 +68,12 @@ HTML <input> outside the HTMLx-lang block, and use <bind> to connect it:
 ```html
 <input id="nameInput" type="text" placeholder="Your name" />
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <bind target="nameInput" as="name"></bind>
     <print>Hello, {name}!</print>
-</div>
+</program>
+</script>
 ```
 
 Now the greeting updates live as someone types into the input — no click,
@@ -89,5 +96,3 @@ Next step
 
 Head to Project Structure to see how to organize this as your files
 grow beyond a single small example.
-
-```
