@@ -1,4 +1,3 @@
-
 # HTMLx-lang API Reference
 
 ## Core Interpreter
@@ -45,13 +44,15 @@ XLangBootstrap.setModulesJsonUrl(url)
 
 Root Structure
 
-HTMLx-lang code lives inside <div data-xlang>. No <script> tag, no <program> wrapper — the interpreter reads the block, executes it, and replaces it with the result in the DOM.
+HTMLx-lang code lives inside <script type="text/xlang"><program>. The interpreter reads the block, executes it, and replaces it with the result in the DOM.
 
 ```html
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <var name="x" value="10"></var>
     <print>Ola {x}</print>
-</div>
+</program>
+</script>
 ```
 
 All HTMLx-lang tags close explicitly — </var>, </print>, </if>, and so on.
@@ -71,10 +72,12 @@ HTML holds the elements; HTMLx-lang binds to them. Two-way for form elements (.v
 ```html
 <input id="nome" type="text" />
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <bind target="nome" as="nome"></bind>
     <print>Ola, {nome}!</print>
-</div>
+</program>
+</script>
 ```
 
 Element Bound via
@@ -88,10 +91,12 @@ Bind an array directly to a container element — it re-renders automatically as
 ```html
 <ul id="lista"></ul>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <array name="frutas" value="['Maca', 'Banana']"></array>
     <bind target="lista" source="frutas"></bind>
-</div>
+</program>
+</script>
 ```
 
 Container Renders as
@@ -155,8 +160,12 @@ Classes
 Instantiate with <new class='ClassName' args='arg1, arg2'>:
 
 ```html
-<var name="p" value="<new class='Pessoa' args='Ana, 30'"></var>
-<print>{p.cumprimentar()}</print>
+<script type="text/xlang">
+<program>
+    <var name="p" value="<new class='Pessoa' args='Ana, 30'"></var>
+    <print>{p.cumprimentar()}</print>
+</program>
+</script>
 ```
 
 DOM
@@ -198,12 +207,16 @@ Error Handling
 · <catch> — the caught error is available as {error}
 
 ```html
-<try>
-    <var name="resultado" value="10 / valorInvalido"></var>
-</try>
-<catch>
-    <print>Algo correu mal: {error}</print>
-</catch>
+<script type="text/xlang">
+<program>
+    <try>
+        <var name="resultado" value="10 / valorInvalido"></var>
+    </try>
+    <catch>
+        <print>Algo correu mal: {error}</print>
+    </catch>
+</program>
+</script>
 ```
 
 Imports
@@ -230,5 +243,3 @@ Math
 · ceil(num)
 · abs(num)
 · random(min, max)
-
-```
