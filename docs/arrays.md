@@ -6,8 +6,12 @@ from it, or inspect it, using a small set of dedicated tags.
 ## Declaring an array
 
 ```html
-<array name="fruits" value="['Apple', 'Banana', 'Orange']"></array>
-<print>{fruits[0]}</print>
+<script type="text/xlang">
+<program>
+    <array name="fruits" value="['Apple', 'Banana', 'Orange']"></array>
+    <print>{fruits[0]}</print>
+</program>
+</script>
 ```
 
 `fruits[0]` reads the first item — arrays start counting at 0, so `[0]` is
@@ -27,14 +31,18 @@ from it, or inspect it, using a small set of dedicated tags.
 | `<length name="n" target="x"></length>` | stores the array's size into `n` |
 
 ```html
-<array name="nums" value="[10, 20, 30]"></array>
-<push name="nums" value="40"></push>
+<script type="text/xlang">
+<program>
+    <array name="nums" value="[10, 20, 30]"></array>
+    <push name="nums" value="40"></push>
 
-<indexOf name="pos" target="nums" value="30"></indexOf>
-<print>index of 30: {pos}</print>
+    <indexOf name="pos" target="nums" value="30"></indexOf>
+    <print>index of 30: {pos}</print>
 
-<length name="n" target="nums"></length>
-<print>size: {n}</print>
+    <length name="n" target="nums"></length>
+    <print>size: {n}</print>
+</program>
+</script>
 ```
 
 ## Looping over an array
@@ -43,9 +51,13 @@ from it, or inspect it, using a small set of dedicated tags.
 track an index manually:
 
 ```html
-<foreach var="item" in="fruits">
-    <print>{item}</print>
-</foreach>
+<script type="text/xlang">
+<program>
+    <foreach var="item" in="fruits">
+        <print>{item}</print>
+    </foreach>
+</program>
+</script>
 ```
 
 ## Reactive lists and tables — binding an array to the page
@@ -60,10 +72,12 @@ updates itself automatically. You never manually redraw anything.
 ```html
 <ul id="list"></ul>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <array name="fruits" value="['Apple', 'Banana']"></array>
     <bind target="list" source="fruits"></bind>
-</div>
+</program>
+</script>
 ```
 
 Notice the attribute is `source`, not `as` — that's the signal that you're
@@ -74,10 +88,12 @@ binding a whole array, not a single value.
 ```html
 <table id="table"></table>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <array name="users" value="[]"></array>
     <bind target="table" source="users"></bind>
-</div>
+</program>
+</script>
 ```
 
 How XLang decides what to render depends on the container tag:
@@ -104,13 +120,17 @@ the array again:
 
 ```html
 <!-- Don't do this -->
-<array name="tasks" value="[]"></array>
-<bind target="taskList" source="tasks"></bind>
+<script type="text/xlang">
+<program>
+    <array name="tasks" value="[]"></array>
+    <bind target="taskList" source="tasks"></bind>
 
-<fun name="reload">
-    <storage-get key="savedTasks" as="loaded" default="[]"></storage-get>
-    <array name="tasks" value="loaded"></array>
-</fun>
+    <fun name="reload">
+        <storage-get key="savedTasks" as="loaded" default="[]"></storage-get>
+        <array name="tasks" value="loaded"></array>
+    </fun>
+</program>
+</script>
 ```
 
 This looks reasonable, but it silently breaks the connection to the page.
@@ -126,7 +146,8 @@ because the array itself never changes — only what's inside it does.
 ```html
 <ul id="taskList"></ul>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <array name="tasks" value="[]"></array>
     <bind target="taskList" source="tasks"></bind>
 
@@ -134,16 +155,21 @@ because the array itself never changes — only what's inside it does.
         <storage-get key="savedTasks" as="loaded" default="[]"></storage-get>
         <set-array name="tasks" value="loaded"></set-array>
     </fun>
-</div>
+</program>
+</script>
 ```
 
 Now `reload` can run as many times as you like — the list updates cleanly
 every time, with no duplicates and no broken binding.
 
 ```html
-<array name="scores" value="[10, 20]"></array>
-<set-array name="scores" value="[99, 100, 101]"></set-array>
-<print>{scores[0]}, {scores[1]}, {scores[2]}</print>
+<script type="text/xlang">
+<program>
+    <array name="scores" value="[10, 20]"></array>
+    <set-array name="scores" value="[99, 100, 101]"></set-array>
+    <print>{scores[0]}, {scores[1]}, {scores[2]}</print>
+</program>
+</script>
 ```
 
 This prints `99, 100, 101` — the original two values are gone, fully
@@ -165,13 +191,15 @@ elsewhere in XLang for reading existing elements:
     <li>Item 3</li>
 </ul>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <array name="items" value="#staticList"></array>
 
     <foreach var="item" in="items">
         <print>{item}</print>
     </foreach>
-</div>
+</program>
+</script>
 ```
 
 `value="#staticList"` tells XLang: "find the element with this id, and
@@ -197,7 +225,8 @@ combine arrays with the storage tags:
 <button id="btnLoad">Load list</button>
 <ul id="cart"></ul>
 
-<div data-xlang>
+<script type="text/xlang">
+<program>
     <array name="items" value="['Apple', 'Bread']"></array>
     <bind target="cart" source="items"></bind>
 
@@ -212,7 +241,8 @@ combine arrays with the storage tags:
 
     <on event="click" target="btnSave" call="save"></on>
     <on event="click" target="btnLoad" call="load"></on>
-</div>
+</program>
+</script>
 ```
 
 Notice `load` uses `<set-array>`, not `<array>` — this is exactly the
