@@ -3,7 +3,7 @@
 # Fetch Users Example
 
 Load users from an API and display them in a reactive list.
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
