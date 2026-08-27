@@ -22,8 +22,12 @@ you'd declare with `<fun>` — inside `{ }`, `condition`, or `value`.
 ## Examples
 
 ```html
-<var name="name" value="'  Ana  '"></var>
-<print>{upper(trim(name))}</print>
+<script type="text/xlang">
+<program>
+    <var name="name" value="'  Ana  '"></var>
+    <print>{upper(trim(name))}</print>
+</program>
+</script>
 ```
 
 This prints ANA — trim removes the surrounding spaces first, then
@@ -31,15 +35,23 @@ upper uppercases the result. Native functions combine freely, including
 nested inside one another, just like the example above.
 
 ```html
-<print>{random(1, 10)}</print>
+<script type="text/xlang">
+<program>
+    <print>{random(1, 10)}</print>
+</program>
+</script>
 ```
 
 Prints a random whole number from 1 to 10, inclusive.
 
 ```html
-<var name="sentence" value="'the quick brown fox'"></var>
-<array name="words" value="split(sentence, ' ')"></array>
-<print>word count: {length(words)}</print>
+<script type="text/xlang">
+<program>
+    <var name="sentence" value="'the quick brown fox'"></var>
+    <array name="words" value="split(sentence, ' ')"></array>
+    <print>word count: {length(words)}</print>
+</program>
+</script>
 ```
 
 Combines a native function (split) with an array declaration in one
@@ -50,5 +62,3 @@ Next step
 If you're ready for object-oriented patterns — classes, inheritance,
 private methods — that's covered in the Pro documentation, along with
 error handling (try/catch) and the module system.
-
-```
