@@ -1,4 +1,3 @@
-
 # Fetch
 
 HTMLx-lang includes built-in support for making HTTP requests.
@@ -23,7 +22,11 @@ With HTMLx-lang, it is one tag.
 ## The `<fetch>` tag
 
 ```html
-<fetch url="'https://api.exemplo.com/dados'" as="resposta"></fetch>
+<script type="text/xlang">
+<program>
+    <fetch url="'https://api.exemplo.com/dados'" as="resposta"></fetch>
+</program>
+</script>
 ```
 
 This makes a request and stores the result in the variable resposta.
@@ -75,18 +78,26 @@ If the response is text, data is a string.
 Making a GET request
 
 ```html
-<fetch url="'https://jsonplaceholder.typicode.com/users'" as="resposta"></fetch>
+<script type="text/xlang">
+<program>
+    <fetch url="'https://jsonplaceholder.typicode.com/users'" as="resposta"></fetch>
+</program>
+</script>
 ```
 
 Then use the data:
 
 ```html
-<if condition="resposta.ok">
-    <print>Total: {resposta.data.length}</print>
-</if>
-<else>
-    <print>Erro: {resposta.status}</print>
-</else>
+<script type="text/xlang">
+<program>
+    <if condition="resposta.ok">
+        <print>Total: {resposta.data.length}</print>
+    </if>
+    <else>
+        <print>Erro: {resposta.status}</print>
+    </else>
+</program>
+</script>
 ```
 
 ---
@@ -94,7 +105,11 @@ Then use the data:
 Making a POST request
 
 ```html
-<fetch url="'https://api.exemplo.com/criar'" method="POST" body="{nome: 'Ana'}" as="resposta"></fetch>
+<script type="text/xlang">
+<program>
+    <fetch url="'https://api.exemplo.com/criar'" method="POST" body="{nome: 'Ana'}" as="resposta"></fetch>
+</program>
+</script>
 ```
 
 When body is an object, HTMLx-lang automatically:
@@ -107,7 +122,11 @@ When body is an object, HTMLx-lang automatically:
 Sending custom headers
 
 ```html
-<fetch url="'https://api.exemplo.com/dados'" headers="{Authorization: 'Bearer token'}" as="resposta"></fetch>
+<script type="text/xlang">
+<program>
+    <fetch url="'https://api.exemplo.com/dados'" headers="{Authorization: 'Bearer token'}" as="resposta"></fetch>
+</program>
+</script>
 ```
 
 ---
@@ -130,7 +149,8 @@ Complete example — loading users
     <div id="resultado"></div>
     <ul id="lista"></ul>
 
-    <div data-xlang>
+    <script type="text/xlang">
+    <program>
         <array name="users" value="[]"></array>
         <bind target="lista" source="users"></bind>
 
@@ -149,7 +169,8 @@ Complete example — loading users
         </fun>
 
         <on event="click" target="btnBuscar" call="buscar"></on>
-    </div>
+    </program>
+    </script>
 
 </body>
 </html>
@@ -162,12 +183,16 @@ Error handling
 When the request fails, the response still comes back as an object.
 
 ```html
-<fetch url="'https://api.exemplo.com/erro'" as="resposta"></fetch>
+<script type="text/xlang">
+<program>
+    <fetch url="'https://api.exemplo.com/erro'" as="resposta"></fetch>
 
-<if condition="resposta.ok == false">
-    <print>Falhou com status {resposta.status}</print>
-    <print>Erro: {resposta.error}</print>
-</if>
+    <if condition="resposta.ok == false">
+        <print>Falhou com status {resposta.status}</print>
+        <print>Erro: {resposta.error}</print>
+    </if>
+</program>
+</script>
 ```
 
 If the request could not even be sent, the object includes an error
