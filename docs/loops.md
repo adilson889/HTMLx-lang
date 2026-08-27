@@ -9,14 +9,18 @@ Use this when you don't know in advance how many times you'll repeat — you
 just know the condition for stopping.
 
 ```html
-<var name="i" value="0"></var>
-<loop>
-    <if condition="i >= 3">
-        <break></break>
-    </if>
-    <print>{i}</print>
-    <set name="i" value="i + 1"></set>
-</loop>
+<script type="text/xlang">
+<program>
+    <var name="i" value="0"></var>
+    <loop>
+        <if condition="i >= 3">
+            <break></break>
+        </if>
+        <print>{i}</print>
+        <set name="i" value="i + 1"></set>
+    </loop>
+</program>
+</script>
 ```
 
 Without that `<break>`, this would run forever. Always make sure a `<loop>`
@@ -27,9 +31,13 @@ has a way out.
 Use this when you know the start, end, and step size ahead of time.
 
 ```html
-<for var="i" from="1" to="10" step="2">
-    <print>{i}</print>
-</for>
+<script type="text/xlang">
+<program>
+    <for var="i" from="1" to="10" step="2">
+        <print>{i}</print>
+    </for>
+</program>
+</script>
 ```
 
 This counts `1, 3, 5, 7, 9` — starting at 1, stopping once it would exceed
@@ -42,11 +50,15 @@ Use this when you have a collection and want to do something with every
 item in it, without worrying about indexes at all.
 
 ```html
-<array name="fruits" value="['Apple', 'Banana', 'Orange']"></array>
+<script type="text/xlang">
+<program>
+    <array name="fruits" value="['Apple', 'Banana', 'Orange']"></array>
 
-<foreach var="item" in="fruits">
-    <print>{item}</print>
-</foreach>
+    <foreach var="item" in="fruits">
+        <print>{item}</print>
+    </foreach>
+</program>
+</script>
 ```
 
 (See **Arrays** for the full array API — `<array>`, `<push>`, and so on.)
@@ -60,17 +72,21 @@ Both only have an effect inside `<loop>`, `<for>`, or `<foreach>`:
   the top of the loop.
 
 ```html
-<var name="i" value="0"></var>
-<loop>
-    <set name="i" value="i + 1"></set>
-    <if condition="i > 5">
-        <break></break>
-    </if>
-    <if condition="i == 3">
-        <continue></continue>
-    </if>
-    <print>{i}</print>
-</loop>
+<script type="text/xlang">
+<program>
+    <var name="i" value="0"></var>
+    <loop>
+        <set name="i" value="i + 1"></set>
+        <if condition="i > 5">
+            <break></break>
+        </if>
+        <if condition="i == 3">
+            <continue></continue>
+        </if>
+        <print>{i}</print>
+    </loop>
+</program>
+</script>
 ```
 
 This prints `1, 2, 4, 5` — `3` is skipped by `<continue>`, and the loop
