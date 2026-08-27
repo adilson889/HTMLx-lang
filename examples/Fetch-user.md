@@ -1,12 +1,9 @@
-
-
 # 3. Fetch Users
 
 # Fetch Users Example
 
 Load users from an API and display them in a reactive list.
 
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,26 +97,28 @@ Load users from an API and display them in a reactive list.
         <div id="status"></div>
         <ul id="list"></ul>
 
-        <div data-xlang>
-            <array name="users" value="[]"></array>
-            <bind target="list" source="users"></bind>
+        <script type="text/xlang">
+            <program>
+                <var name="users" value="[]"></var>
+                <bind target="list" source="users"></bind>
 
-            <fun name="loadUsers">
-                <print id="status" style="color:#94a3b8;">Loading...</print>
+                <fun name="loadUsers">
+                    <print id="status" style="color:#94a3b8;">Loading...</print>
 
-                <fetch url="'https://jsonplaceholder.typicode.com/users'" as="resposta"></fetch>
+                    <fetch url="'https://jsonplaceholder.typicode.com/users'" as="resposta"></fetch>
 
-                <if condition="resposta.ok">
-                    <set-array name="users" value="resposta.data"></set-array>
-                    <print id="status" style="color:#4ade80;">Users loaded!</print>
-                </if>
-                <else>
-                    <print id="status" style="color:#f87171;">Error {resposta.status}</print>
-                </else>
-            </fun>
+                    <if condition="resposta.ok">
+                        <set-array name="users" value="resposta.data"></set-array>
+                        <print id="status" style="color:#4ade80;">Users loaded!</print>
+                    </if>
+                    <else>
+                        <print id="status" style="color:#f87171;">Error {resposta.status}</print>
+                    </else>
+                </fun>
 
-            <on event="click" target="btnLoad" call="loadUsers"></on>
-        </div>
+                <on event="click" target="btnLoad" call="loadUsers"></on>
+            </program>
+        </script>
     </div>
 
 </body>
