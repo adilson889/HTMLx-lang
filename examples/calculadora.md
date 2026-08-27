@@ -24,61 +24,63 @@
         <div id="display">0</div>
 
         <!-- Bloco lógico do Interpretador XLang -->
-        <div data-xlang>
-            <var name="currentValue" value="''"></var>
-            <var name="previousValue" value="''"></var>
-            <var name="operation" value="''"></var>
-            <var name="result" value="0"></var>
+        <script type="text/xlang">
+            <program>
+                <var name="currentValue" value="''"></var>
+                <var name="previousValue" value="''"></var>
+                <var name="operation" value="''"></var>
+                <var name="result" value="0"></var>
 
-            <fun name="addNumber" params="n">
-                <!-- Se o display marcar 0 limpo, substitui; senão, concatena -->
-                <if condition="currentValue == ''">
-                    <set name="currentValue" value="n"></set>
-                </if>
-                <else>
-                    <set name="currentValue" value="currentValue + n"></set>
-                </else>
-                <print id="display">{currentValue}</print>
-            </fun>
+                <fun name="addNumber" params="n">
+                    <!-- Se o display marcar 0 limpo, substitui; senão, concatena -->
+                    <if condition="currentValue == ''">
+                        <set name="currentValue" value="n"></set>
+                    </if>
+                    <else>
+                        <set name="currentValue" value="currentValue + n"></set>
+                    </else>
+                    <print id="display">{currentValue}</print>
+                </fun>
 
-            <fun name="setOperation" params="op">
-                <!-- Salva o valor atual como numérico antes de limpar -->
-                <set name="previousValue" value="currentValue * 1"></set>
-                <set name="currentValue" value="''"></set>
-                <set name="operation" value="op"></set>
-            </fun>
+                <fun name="setOperation" params="op">
+                    <!-- Salva o valor atual como numérico antes de limpar -->
+                    <set name="previousValue" value="currentValue * 1"></set>
+                    <set name="currentValue" value="''"></set>
+                    <set name="operation" value="op"></set>
+                </fun>
 
-            <fun name="calculate">
-                <!-- Converte o segundo termo para numérico para evitar concatenação de texto -->
-                <var name="currentNum" value="currentValue * 1"></var>
-                
-                <if condition="operation == '+'">
-                    <set name="result" value="previousValue + currentNum"></set>
-                </if>
-                <elseif condition="operation == '-'">
-                    <set name="result" value="previousValue - currentNum"></set>
-                </elseif>
-                <elseif condition="operation == '*'">
-                    <set name="result" value="previousValue * currentNum"></set>
-                </elseif>
-                <elseif condition="operation == '/'">
-                    <set name="result" value="previousValue / currentNum"></set>
-                </elseif>
+                <fun name="calculate">
+                    <!-- Converte o segundo termo para numérico para evitar concatenação de texto -->
+                    <var name="currentNum" value="currentValue * 1"></var>
+                    
+                    <if condition="operation == '+'">
+                        <set name="result" value="previousValue + currentNum"></set>
+                    </if>
+                    <elseif condition="operation == '-'">
+                        <set name="result" value="previousValue - currentNum"></set>
+                    </elseif>
+                    <elseif condition="operation == '*'">
+                        <set name="result" value="previousValue * currentNum"></set>
+                    </elseif>
+                    <elseif condition="operation == '/'">
+                        <set name="result" value="previousValue / currentNum"></set>
+                    </elseif>
 
-                <!-- Renderiza o resultado e joga de volta no estado para permitir operações contínuas -->
-                <print id="display">{result}</print>
-                <set name="currentValue" value="result + ''"></set> 
-                <set name="operation" value="''"></set>
-            </fun>
+                    <!-- Renderiza o resultado e joga de volta no estado para permitir operações contínuas -->
+                    <print id="display">{result}</print>
+                    <set name="currentValue" value="result + ''"></set> 
+                    <set name="operation" value="''"></set>
+                </fun>
 
-            <fun name="clear">
-                <set name="currentValue" value="''"></set>
-                <set name="previousValue" value="''"></set>
-                <set name="operation" value="''"></set>
-                <set name="result" value="0"></set>
-                <print id="display">0</print>
-            </fun>
-        </div>
+                <fun name="clear">
+                    <set name="currentValue" value="''"></set>
+                    <set name="previousValue" value="''"></set>
+                    <set name="operation" value="''"></set>
+                    <set name="result" value="0"></set>
+                    <print id="display">0</print>
+                </fun>
+            </program>
+        </script>
 
         <!-- Teclado Numérico e Operadores -->
         <button class="btn num" onclick="XLang.call('addNumber', '7')">7</button>
