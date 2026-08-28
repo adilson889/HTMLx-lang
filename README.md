@@ -3,10 +3,6 @@
 **Programming using HTML tags themselves.**
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/adilson889/HTMLx-lang/main/img/xlang.jpg" alt="HTMLx-lang" width="400" />
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/version-0.1.2-blue" alt="Version" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
   <img src="https://img.shields.io/badge/status-active-brightgreen" alt="Status" />
@@ -19,7 +15,7 @@
 
 The web was built on HTML — a language meant to describe content. Over time, making that content interactive required learning JavaScript, frameworks, build tools, and an ever-growing list of abstractions.
 
-HTMLx-lang brings programming back to HTML itself. It's a language whose syntax is HTML tags — starting from what already exists in HTML instead of inventing something new on top of it. You write logic using simple, readable tags that live alongside your markup. No JavaScript required. No build step. No compiler.
+HTMLx-lang brings programming back to HTML itself. It's a declarative HTML framework/DSL — write logic with tags inside your HTML, and it runs instantly. No JavaScript, no compiler, no setup.
 
 Output is sanitized and interpolation is escaped by default — see the [documentation](https://github.com/adilson889/HTMLx-lang/tree/main/docs) for the full security model.
 
