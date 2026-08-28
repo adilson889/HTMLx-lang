@@ -222,7 +222,8 @@ Calls a public function (`<fun>`, not `<private fun>`) from outside the interpre
 
 ### Imports
 
-- `<from xlang import math>`
+- `<from xlang import math>` — single import
+- `<from xlang import="math, validation, state">` — multiple imports at once
 - `<import from="xlang" name="math"></import>`
 - `<import modules="xlang.math"></import>`
 
