@@ -58,9 +58,9 @@ This saves Ativo under the key user_1.
 
 ---
 
-Loading a value
+## Loading a value
 
-Use <storage-get> to read a value back.
+Use `<storage-get>` to read a value back.
 
 ```html
 <storage-get key="nomeUsuario" as="nome"></storage-get>
@@ -71,11 +71,11 @@ as creates an HTMLx-lang variable with the loaded value.
 
 ---
 
-Loading with a default value
+## Loading with a default value
 
 Sometimes the key does not exist yet.
 
-By default, <storage-get> returns undefined in that case.
+By default, `<storage-get>` returns undefined in that case.
 
 But you can provide a fallback with default:
 
@@ -90,13 +90,13 @@ If tema already exists, the stored value wins.
 
 ---
 
-Saving numbers, arrays and objects
+## Saving numbers, arrays and objects
 
 localStorage normally stores only text.
 
 HTMLx-lang handles this automatically.
 
-Numbers
+### Numbers
 
 ```html
 <var name="idade" value="25"></var>
@@ -112,7 +112,7 @@ Later:
 
 The value comes back as a number, not as text.
 
-Arrays
+### Arrays
 
 ```html
 <array name="frutas" value="['Maçã', 'Banana']"></array>
@@ -132,7 +132,7 @@ The array comes back as a real array.
 
 ---
 
-Removing a value
+## Removing a value
 
 ```html
 <storage-remove key="nomeUsuario"></storage-remove>
@@ -142,7 +142,7 @@ This removes only that key.
 
 ---
 
-Clearing all HTMLx-lang storage
+## Clearing all HTMLx-lang storage
 
 ```html
 <storage-clear></storage-clear>
@@ -154,7 +154,7 @@ It never removes storage created by other scripts on the same page.
 
 ---
 
-Automatic namespace
+## Automatic namespace
 
 HTMLx-lang adds an internal prefix to every key.
 
@@ -175,7 +175,7 @@ scripts that also use localStorage.
 
 ---
 
-Complete example
+## Complete example
 
 ```html
 <!DOCTYPE html>
@@ -195,28 +195,30 @@ Complete example
     <button id="btnLimpar">Limpar</button>
     <div id="resultado"></div>
 
-    <div data-xlang>
-        <bind target="nota" as="nota"></bind>
+    <script type="text/xlang">
+        <program>
+            <bind target="nota" as="nota"></bind>
 
-        <fun name="salvar">
-            <storage-set key="minhaNota" value="nota"></storage-set>
-            <print id="resultado">Nota salva!</print>
-        </fun>
+            <fun name="salvar">
+                <storage-set key="minhaNota" value="nota"></storage-set>
+                <print id="resultado">Nota salva!</print>
+            </fun>
 
-        <fun name="carregar">
-            <storage-get key="minhaNota" as="notaSalva" default="'Sem nota'"></storage-get>
-            <print id="resultado">Nota: {notaSalva}</print>
-        </fun>
+            <fun name="carregar">
+                <storage-get key="minhaNota" as="notaSalva" default="'Sem nota'"></storage-get>
+                <print id="resultado">Nota: {notaSalva}</print>
+            </fun>
 
-        <fun name="limpar">
-            <storage-remove key="minhaNota"></storage-remove>
-            <print id="resultado">Nota removida!</print>
-        </fun>
+            <fun name="limpar">
+                <storage-remove key="minhaNota"></storage-remove>
+                <print id="resultado">Nota removida!</print>
+            </fun>
 
-        <on event="click" target="btnSalvar" call="salvar"></on>
-        <on event="click" target="btnCarregar" call="carregar"></on>
-        <on event="click" target="btnLimpar" call="limpar"></on>
-    </div>
+            <on event="click" target="btnSalvar" call="salvar"></on>
+            <on event="click" target="btnCarregar" call="carregar"></on>
+            <on event="click" target="btnLimpar" call="limpar"></on>
+        </program>
+    </script>
 
 </body>
 </html>
@@ -224,13 +226,13 @@ Complete example
 
 ---
 
-Summary
+## Summary
 
-· <storage-set> saves a value
-
-· <storage-get> loads a value into a variable
-· <storage-remove> removes one key
-· <storage-clear> removes all HTMLx-lang keys
-· Numbers, arrays and objects work automatically
-· Keys are namespaced automatically
-· default provides a fallback when a key is missing
+- `<storage-set>` saves a value
+- `<storage-get>` loads a value into a variable
+- `<storage-remove>` removes one key
+- `<storage-clear>` removes all HTMLx-lang keys
+- Numbers, arrays and objects work automatically
+- Keys are namespaced automatically
+- `default` provides a fallback when a key is missing
+```
