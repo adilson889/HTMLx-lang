@@ -1,8 +1,9 @@
+
 # Security Policy
 
 ## Supported Versions
 
-XLang is under active development. Security fixes are made against the latest version on `main`; there is no support for older tagged versions.
+HTMLx-lang is under active development. Security fixes are made against the latest version on `main`; there is no support for older tagged versions.
 
 ## Reporting a Vulnerability
 
@@ -25,8 +26,9 @@ You should expect an initial response within a few days. Once a fix is ready, it
 Relevant reports include (but aren't limited to):
 
 - Ways to bypass the `<print>` tag/attribute whitelist or the interpolation escaping
-- Ways to execute arbitrary JavaScript from XLang expressions or tag attributes
-- Ways to break out of the expression sandbox (accessing `window`, `document`, `globalThis`, or anything not explicitly exposed to XLang)
+- Ways to execute arbitrary JavaScript from HTMLx-lang expressions or tag attributes
+- Ways to break out of the expression sandbox (accessing `window`, `document`, `globalThis`, or anything not explicitly exposed to HTMLx-lang)
 - Prototype pollution or similar issues in the array/object handling
 
-Out of scope: issues that require the page author to intentionally write unsafe code (e.g. manually passing `innerHTML` of untrusted content into the DOM outside of XLang's own tags) — XLang can't protect against unsafe use of plain HTML/JS around it.
+Out of scope: issues that require the page author to intentionally write unsafe code (e.g. manually passing `innerHTML` of untrusted content into the DOM outside of HTMLx-lang's own tags) — HTMLx-lang can't protect against unsafe use of plain HTML/JS around it.
+```
