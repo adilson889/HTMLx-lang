@@ -20,40 +20,46 @@ The way you tell the browser "this part is HTMLx-lang, not plain HTML" is a
 single container:
 
 ```html
-<div data-xlang>
-    <!-- everything in here is HTMLx-lang code -->
-</div>
+<script type="text/xlang">
+    <program>
+        <!-- everything in here is HTMLx-lang code -->
+    </program>
+</script>
 ```
 
-That's it. No <script> tag, no special file extension. Just a <div>
-with the data-xlang attribute. When the page loads, the interpreter finds
-every <div data-xlang> on the page, reads what's inside, runs it, and
-replaces the div with whatever output your code produced.
+That's it. No special file extension, no attribute on a `<div>`. Just a
+`<script type="text/xlang">` block wrapping a `<program>`. When the page
+loads, the interpreter finds every `<script type="text/xlang">` on the
+page, reads what's inside, runs it, and renders whatever output your code
+produced.
 
 One rule to always keep in mind: every HTMLx-lang tag closes explicitly.
-Even if a tag looks empty, you still write </var>, </print>, </if>.
+Even if a tag looks empty, you still write `</var>`, `</print>`, `</if>`.
 This isn't optional the way it sometimes is in plain HTML — the interpreter
 depends on seeing that closing tag to know where a block ends.
 
 ```html
-<div data-xlang>
-    <var name="x" value="10"></var>
-    <print>Hello {x}</print>
-</div>
+<script type="text/xlang">
+    <program>
+        <var name="x" value="10"></var>
+        <print>Hello {x}</print>
+    </program>
+</script>
 ```
 
-Run this, and the whole <div data-xlang>...</div> block gets replaced by
-a new element containing "Hello 10".
+Run this, and the code inside `<program>` executes, producing "Hello 10"
+on the page.
 
-What you'll need
+## What you'll need
 
-· Any text editor
-· A browser to open your .html file in
-· No build step, no npm install, no compiler — HTMLx-lang runs directly in the
+- Any text editor
+- A browser to open your `.html` file in
+- No build step, no `npm install`, no compiler — HTMLx-lang runs directly in the
   browser once the interpreter script is loaded (see Installation)
 
-Where to go next
+## Where to go next
 
-· Installation — get xlang-interpreter.js loaded on your page
-· First Program — write and run your very first <div data-xlang> block
-· Project Structure — how to organize files as your project grows
+- **Installation** — get `xlang-interpreter.js` loaded on your page
+- **First Program** — write and run your very first `<script type="text/xlang">` block
+- **Project Structure** — how to organize files as your project grows
+```
