@@ -30,77 +30,82 @@ Runs a function once after a delay.
 <after ms="2000" call="mostrar"></after>
 ```
 
-Attributes
+**Attributes**
 
-Attribute Required Description
-ms Yes Delay in milliseconds
-call Yes Function name to run
+| Attribute | Required | Description |
+|---|---|---|
+| ms | Yes | Delay in milliseconds |
+| call | Yes | Function name to run |
 
-Example
+**Example**
 
 ```html
-<div data-xlang>
-    <fun name="mostrar">
-        <print id="msg">Executado!</print>
-    </fun>
+<script type="text/xlang">
+    <program>
+        <fun name="mostrar">
+            <print id="msg">Executado!</print>
+        </fun>
 
-    <after ms="3000" call="mostrar"></after>
-</div>
+        <after ms="3000" call="mostrar"></after>
+    </program>
+</script>
 ```
 
 After 3 seconds, the function mostrar runs.
 
 ---
 
-<every>
+## `<every>`
 
 Runs a function repeatedly at an interval.
 
-Syntax
+### Syntax
 
 ```html
 <every ms="1000" call="incrementar"></every>
 ```
 
-Attributes
+**Attributes**
 
-Attribute Required Description
-ms Yes Interval in milliseconds
-call Yes Function name to run
+| Attribute | Required | Description |
+|---|---|---|
+| ms | Yes | Interval in milliseconds |
+| call | Yes | Function name to run |
 
-Example
+**Example**
 
 ```html
-<div data-xlang>
-    <var name="contador" value="0"></var>
+<script type="text/xlang">
+    <program>
+        <var name="contador" value="0"></var>
 
-    <fun name="incrementar">
-        <set name="contador" value="contador + 1"></set>
-        <print id="resultado">Contador: {contador}</print>
-    </fun>
+        <fun name="incrementar">
+            <set name="contador" value="contador + 1"></set>
+            <print id="resultado">Contador: {contador}</print>
+        </fun>
 
-    <every ms="1000" call="incrementar"></every>
-</div>
+        <every ms="1000" call="incrementar"></every>
+    </program>
+</script>
 ```
 
 The counter increments every second.
 
 ---
 
-Notes
+## Notes
 
-· Both tags close explicitly: <after ...></after>, <every ...></every>
-
-· The interval starts immediately when the page loads
-· To control the interval, use a variable and a condition inside the function
-· Errors inside the called function are logged to the console
+- Both tags close explicitly: `<after ...></after>`, `<every ...></every>`
+- The interval starts immediately when the page loads
+- To control the interval, use a variable and a condition inside the function
+- Errors inside the called function are logged to the console
 
 ---
 
-Summary
+## Summary
 
-· <after> — setTimeout
-
-· <every> — setInterval
-· Both use ms and call
-· Both are children, loaded automatically
+- `<after>` — setTimeout
+- `<every>` — setInterval
+- Both use `ms` and `call`
+- Both are children, loaded automatically
+```
