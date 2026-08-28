@@ -1,0 +1,15 @@
+{
+  "version": "1.0.1",
+  "files": [
+    "xlang-interpreter.js",
+    "xlang-bootstrap.js",
+    "xlang-modules.json",
+    "xlang-children.json",
+    "children/state.js",
+    "children/timers.js",
+    "children/js-bridge.js",
+    "children/array.js",
+    "modules/xlang-math.js",
+    "modules/xlang-validation.js"
+  ]
+}
