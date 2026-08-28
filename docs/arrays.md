@@ -249,7 +249,7 @@ Notice `load` uses `<set-array>`, not `<array>` — this is exactly the
 situation described above. Using `<array>` here would silently disconnect
 the list from the page the moment someone clicks "Load."
 
-## Next step
+## Next step 
 
 Head to **DOM Manipulation** to trigger this kind of update from real user
 interaction — clicks, typing, and more.
