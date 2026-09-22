@@ -111,12 +111,23 @@ const SAFE_TAGS = new Set([
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
     'blockquote', 'code', 'pre', 'kbd', 'samp', 'var', 'cite', 'q',
-    'abbr', 'address', 'bdi', 'bdo', 'del', 'ins', 'time'
+    'abbr', 'address', 'bdi', 'bdo', 'del', 'ins', 'time',
+    // Interativas: necessarias para <on target="..."> e <bind target="...">
+    // funcionarem -- sem estas, XLang nunca consegue montar UI clicavel.
+    'button', 'input', 'label', 'select', 'option', 'textarea', 'form'
 ]);
 
 const SAFE_ATTRS = new Set([
     'class', 'style', 'title', 'dir', 'lang', 'datetime',
-    'cite', 'start', 'reversed', 'colspan', 'rowspan'
+    'cite', 'start', 'reversed', 'colspan', 'rowspan',
+    // "id" e' o que <on target="id">/<bind target="id"> usam para
+    // localizar o elemento via document.getElementById. "type",
+    // "value", "placeholder", "name", "checked", "disabled",
+    // "for", "min", "max", "step" cobrem os casos normais de
+    // input/button/label sem abrir mao de href/src/on* (que
+    // continuam bloqueados abaixo, sem excecao).
+    'id', 'type', 'value', 'placeholder', 'name', 'checked',
+    'disabled', 'for', 'min', 'max', 'step'
 ]);
 
 function sanitizeHtml(html) {
