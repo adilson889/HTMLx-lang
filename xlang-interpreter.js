@@ -576,7 +576,7 @@ class XLangInterpreter {
         return parts;
     }
 
-    evalExpr(expr, scope) {
+async evalExpr(expr, scope) {
         let out = '';
         let i = 0;
         const calledFuncs = new Set();
@@ -727,11 +727,13 @@ class XLangInterpreter {
 
         const paramNames = [];
         const paramValues = [];
+        const userFuncNames = new Set();
         calledFuncs.forEach((name) => {
             paramNames.push(name);
             if (NATIVE_FUNCS.has(name) && !scope.getFunc(name) && !this.globalFuncs.get(name)) {
                 paramValues.push((...args) => NATIVE_FUNCS.get(name)(...args));
             } else {
+                userFuncNames.add(name);
                 paramValues.push((...args) => this.callFunction(name, args, scope));
             }
         });
@@ -740,8 +742,32 @@ class XLangInterpreter {
             paramValues.push((...args) => this.callMethod(info.receiver, info.methodName, args, callerClassName));
         });
 
-        const fn = new Function(...paramNames, 'return (' + out + ')');
-        return fn.apply(undefined, paramValues);
+        // Chamadas a <fun> do utilizador (this.callFunction) sao sempre
+        // assincronas por baixo -- executeBlock usa "await" em cascata
+        // para suportar <if>/<for>/chamadas nativas dentro do corpo da
+        // funcao. "new Function" normal e' sincrono: se a expressao usar
+        // o valor de retorno (ex: {somar(1,2)} ou {somar(1,2) + 1}),
+        // fica preso numa Promise nao resolvida em vez do valor real
+        // (aparece como "[object Promise]" em qualquer sitio que mostre
+        // o resultado como texto). A correcao: gerar uma funcao
+        // ASSINCRONA (AsyncFunction) em vez de uma normal, e prefixar
+        // "await" em cada chamada a funcao de utilizador dentro do
+        // proprio codigo gerado -- assim o await resolve a chamada
+        // exatamente onde ela esta na expressao, mesmo no meio de uma
+        // conta maior, sem precisar de pre-calcular nada.
+        let outComAwait = out;
+        if (userFuncNames.size > 0) {
+            for (const name of userFuncNames) {
+                const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(', 'g');
+                outComAwait = outComAwait.replace(re, 'await ' + name + '(');
+            }
+        }
+
+        const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+        const fn = userFuncNames.size > 0
+            ? new AsyncFunction(...paramNames, 'return (' + outComAwait + ')')
+            : new Function(...paramNames, 'return (' + out + ')');
+        return await fn.apply(undefined, paramValues);
     }
 
     async callFunction(name, argValues, callerScope) {
@@ -820,7 +846,7 @@ class XLangInterpreter {
             for (const f of c2.fields) {
                 const fieldScope = new Scope(c2.declScope);
                 let val;
-                try { val = this.evalExpr(f.valueExpr, fieldScope); }
+                try { val = await this.evalExpr(f.valueExpr, fieldScope); }
                 catch { val = f.valueExpr; }
                 instance[f.name] = val;
             }
@@ -864,7 +890,7 @@ class XLangInterpreter {
 
             if (tag === 'if') {
                 let cond = false;
-                try { cond = !!this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
+                try { cond = !!await this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
                 catch { cond = false; }
                 if (cond) {
                     await this.executeBlock(this.parseStatements(stmt.body), new Scope(scope));
@@ -879,7 +905,7 @@ class XLangInterpreter {
             if (tag === 'elseif') {
                 if (chainState === false) {
                     let cond = false;
-                    try { cond = !!this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
+                    try { cond = !!await this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
                     catch { cond = false; }
                     if (cond) {
                         await this.executeBlock(this.parseStatements(stmt.body), new Scope(scope));
@@ -944,7 +970,7 @@ class XLangInterpreter {
 
             case 'return': {
                 const valueExpr = this.getAttr(attrs, 'value');
-                const value = valueExpr !== null ? this.evalExpr(valueExpr, scope) : undefined;
+                const value = valueExpr !== null ? await this.evalExpr(valueExpr, scope) : undefined;
                 throw new ReturnSignal(value);
             }
 
@@ -961,20 +987,24 @@ class XLangInterpreter {
                     this.outputDiv.appendChild(target);
                 }
 
-                const render = () => {
-                    const text = rawText.replace(/{([^}]+)}/g, (match, expr) => {
+                const render = async () => {
+                    const matches = [...rawText.matchAll(/{([^}]+)}/g)];
+                    const resolved = await Promise.all(matches.map(async (m) => {
+                        const expr = m[1];
                         try {
-                            return escapeHtml(String(this.evalExpr(expr.trim(), scope)));
+                            return escapeHtml(String(await this.evalExpr(expr.trim(), scope)));
                         } catch (e) {
                             if (this.printErrorMessage !== null) {
                                 return escapeHtml(this.printErrorMessage);
                             }
                             return escapeHtml(`[error: ${e.message}]`);
                         }
-                    });
+                    }));
+                    let i = 0;
+                    const text = rawText.replace(/{([^}]+)}/g, () => resolved[i++]);
                     target.innerHTML = sanitizeHtml(text);
                 };
-                render();
+                await render();
 
                 const usedNames = this.extractVarNames(rawText);
                 let stateListener = null;
@@ -1074,18 +1104,18 @@ class XLangInterpreter {
                 } else if (rawValue.startsWith('<call')) {
                     const fnName = this.getAttr(rawValue, 'name');
                     const argsStr = this.getAttr(rawValue, 'args') || '';
-                    const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
+                    const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
                     const result = await this.callFunction(fnName, argValues, scope);
                     scope.defineVar(name, { type: 'value', value: result, mutable: tagName === 'var' });
                 } else if (rawValue.startsWith('<new')) {
                     const className = this.getAttr(rawValue, 'class');
                     const argsStr = this.getAttr(rawValue, 'args') || '';
-                    const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
+                    const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
                     const instance = await this.instantiate(className, argValues);
                     scope.defineVar(name, { type: 'value', value: instance, mutable: tagName === 'var' });
                 } else {
                     let value;
-                    try { value = this.evalExpr(rawValue, scope); }
+                    try { value = await this.evalExpr(rawValue, scope); }
                     catch { value = rawValue; }
                     scope.defineVar(name, { type: 'value', value, mutable: tagName === 'var' });
                 }
@@ -1110,7 +1140,7 @@ class XLangInterpreter {
                 }
 
                 let value;
-                try { value = this.evalExpr(rawValue, scope); }
+                try { value = await this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
 
                 const propMatch = name.match(/^([A-Za-z_]\w*)\.(\w+)$/);
@@ -1130,7 +1160,7 @@ class XLangInterpreter {
                     const entry = scope.getVarEntry(arrName);
                     if (!entry || !Array.isArray(entry.value)) throw new Error(`"${arrName}" is not an array.`);
                     let idx;
-                    try { idx = this.evalExpr(idxExpr, scope); }
+                    try { idx = await this.evalExpr(idxExpr, scope); }
                     catch { idx = Number(idxExpr); }
                     entry.value[idx] = value;
                     break;
@@ -1169,7 +1199,7 @@ class XLangInterpreter {
                     if (!el) throw new Error(`<array>: no element with id "${targetId}" found for value="#${targetId}".`);
                     value = Array.from(el.children).map((child) => child.textContent.trim());
                 } else if (rawValue !== null) {
-                    try { value = this.evalExpr(rawValue, scope); }
+                    try { value = await this.evalExpr(rawValue, scope); }
                     catch { value = []; }
                 }
 
@@ -1188,7 +1218,7 @@ class XLangInterpreter {
                 }
 
                 let newItems;
-                try { newItems = this.evalExpr(rawValue, scope); }
+                try { newItems = await this.evalExpr(rawValue, scope); }
                 catch { newItems = []; }
 
                 if (!Array.isArray(newItems)) {
@@ -1210,7 +1240,7 @@ class XLangInterpreter {
                 }
 
                 let value;
-                try { value = this.evalExpr(rawValue, scope); }
+                try { value = await this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
 
                 entry.value.push(value);
@@ -1237,7 +1267,7 @@ class XLangInterpreter {
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) throw new Error(`"${name}" is not an array.`);
                 let value;
-                try { value = this.evalExpr(rawValue, scope); }
+                try { value = await this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
                 entry.value.unshift(value);
                 break;
@@ -1260,7 +1290,7 @@ class XLangInterpreter {
                 const entry = scope.getVarEntry(target);
                 if (!entry || !Array.isArray(entry.value)) throw new Error(`"${target}" is not an array.`);
                 let value;
-                try { value = this.evalExpr(rawValue, scope); }
+                try { value = await this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
                 const idx = entry.value.findIndex((v) => v === value);
                 scope.defineVar(name, { type: 'value', value: idx, mutable: true });
@@ -1274,7 +1304,7 @@ class XLangInterpreter {
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) throw new Error(`"${name}" is not an array.`);
                 let idx;
-                try { idx = this.evalExpr(indexAttr, scope); }
+                try { idx = await this.evalExpr(indexAttr, scope); }
                 catch { idx = Number(indexAttr); }
                 entry.value.splice(idx, 1);
                 break;
@@ -1330,10 +1360,10 @@ class XLangInterpreter {
 
             case 'for': {
                 const varName = this.getAttr(attrs, 'var');
-                const fromVal = Number(this.evalExpr(this.getAttr(attrs, 'from') || '0', scope));
-                const toVal = Number(this.evalExpr(this.getAttr(attrs, 'to') || '0', scope));
+                const fromVal = Number(await this.evalExpr(this.getAttr(attrs, 'from') || '0', scope));
+                const toVal = Number(await this.evalExpr(this.getAttr(attrs, 'to') || '0', scope));
                 const stepAttr = this.getAttr(attrs, 'step');
-                const step = Number(stepAttr !== null ? this.evalExpr(stepAttr, scope) : 1);
+                const step = Number(stepAttr !== null ? await this.evalExpr(stepAttr, scope) : 1);
 
                 if (step === 0 || !varName) break;
 
@@ -1358,7 +1388,7 @@ class XLangInterpreter {
             case 'switch': {
                 const valueExpr = this.getAttr(attrs, 'value');
                 let switchVal;
-                try { switchVal = this.evalExpr(valueExpr, scope); }
+                try { switchVal = await this.evalExpr(valueExpr, scope); }
                 catch { switchVal = undefined; }
 
                 const cases = this.parseStatements(body);
@@ -1367,7 +1397,7 @@ class XLangInterpreter {
                 for (const c of cases) {
                     if (c.tagName === 'case') {
                         let cVal;
-                        try { cVal = this.evalExpr(this.getAttr(c.attrs, 'value'), scope); }
+                        try { cVal = await this.evalExpr(this.getAttr(c.attrs, 'value'), scope); }
                         catch { cVal = undefined; }
                         if (cVal == switchVal) { matched = c; break; }
                     } else if (c.tagName === 'default') {
@@ -1408,7 +1438,7 @@ class XLangInterpreter {
             case 'call': {
                 const fnName = this.getAttr(attrs, 'name');
                 const argsStr = this.getAttr(attrs, 'args') || '';
-                const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
+                const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
                 const targetName = this.getAttr(attrs, 'target');
                 if (targetName) {
                     const entry = scope.getVarEntry(targetName);
@@ -1484,7 +1514,7 @@ class XLangInterpreter {
                 const parentCls = this.classes.get(cls.parentName);
                 if (!parentCls) throw new Error('Parent class not found: ' + cls.parentName);
                 const argsStr = this.getAttr(attrs, 'args') || '';
-                const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
+                const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
                 const thisEntry = scope.getVarEntry('this');
                 if (!thisEntry) throw new Error('<super> called without "this" in scope.');
                 await this.runInit(parentCls, thisEntry.value, argValues);
@@ -1500,19 +1530,19 @@ class XLangInterpreter {
                 if (!urlExpr || !asName) break;
 
                 let url;
-                try { url = this.evalExpr(urlExpr, scope); }
+                try { url = await this.evalExpr(urlExpr, scope); }
                 catch { url = urlExpr; }
 
                 const method = (methodAttr || 'GET').toUpperCase();
 
                 const options = { method };
                 if (headersExpr !== null) {
-                    try { options.headers = this.evalExpr(headersExpr, scope); }
+                    try { options.headers = await this.evalExpr(headersExpr, scope); }
                     catch { options.headers = {}; }
                 }
                 if (bodyExpr !== null && method !== 'GET') {
                     let bodyVal;
-                    try { bodyVal = this.evalExpr(bodyExpr, scope); }
+                    try { bodyVal = await this.evalExpr(bodyExpr, scope); }
                     catch { bodyVal = bodyExpr; }
                     options.headers = options.headers || {};
                     if (typeof bodyVal === 'object') {
@@ -1615,7 +1645,7 @@ class XLangInterpreter {
                 const el = document.getElementById(targetId);
                 if (!el) throw new Error(`Element with id "${targetId}" not found.`);
                 let value;
-                try { value = this.evalExpr(rawValue, scope); }
+                try { value = await this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
                 el.style.setProperty(property, String(value));
                 break;
@@ -1627,10 +1657,10 @@ class XLangInterpreter {
                 if (!keyExpr || valueExpr === null) break;
 
                 let key = keyExpr;
-                try { key = String(this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
+                try { key = String(await this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
 
                 let value;
-                try { value = this.evalExpr(valueExpr, scope); } catch { value = valueExpr; }
+                try { value = await this.evalExpr(valueExpr, scope); } catch { value = valueExpr; }
 
                 const namespacedKey = 'htmlx:' + key;
 
@@ -1649,7 +1679,7 @@ class XLangInterpreter {
                 if (!keyExpr || !asName) break;
 
                 let key = keyExpr;
-                try { key = String(this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
+                try { key = String(await this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
 
                 const namespacedKey = 'htmlx:' + key;
                 const raw = localStorage.getItem(namespacedKey);
@@ -1658,7 +1688,7 @@ class XLangInterpreter {
 
                 if (raw === null) {
                     if (defaultExpr !== null) {
-                        try { value = this.evalExpr(defaultExpr, scope); } catch { value = defaultExpr; }
+                        try { value = await this.evalExpr(defaultExpr, scope); } catch { value = defaultExpr; }
                     } else {
                         value = undefined;
                     }
@@ -1679,7 +1709,7 @@ class XLangInterpreter {
                 if (!keyExpr) break;
 
                 let key = keyExpr;
-                try { key = String(this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
+                try { key = String(await this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
 
                 localStorage.removeItem('htmlx:' + key);
                 break;
