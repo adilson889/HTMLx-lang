@@ -114,7 +114,20 @@ const SAFE_TAGS = new Set([
     'abbr', 'address', 'bdi', 'bdo', 'del', 'ins', 'time',
     // Interativas: necessarias para <on target="..."> e <bind target="...">
     // funcionarem -- sem estas, XLang nunca consegue montar UI clicavel.
-    'button', 'input', 'label', 'select', 'option', 'textarea', 'form'
+    'button', 'input', 'label', 'select', 'option', 'textarea', 'form',
+    // Estrutura e conteudo: layouts, cartoes, tabelas completas, links, imagens.
+    'section', 'article', 'header', 'footer', 'main', 'aside', 'nav',
+    'figure', 'figcaption', 'details', 'summary', 'dl', 'dt', 'dd',
+    'caption', 'colgroup', 'col', 'tfoot', 'progress', 'meter',
+    'a', 'img',
+    // SVG: graficos, diagramas e desenhos gerados por <for>/<foreach>.
+    // Ficam de fora (viram so o conteudo): script, style, use, image,
+    // animate, set, foreignObject, iframe, object, embed -- tudo o que
+    // pode carregar recursos externos ou correr codigo.
+    'svg', 'g', 'defs', 'rect', 'circle', 'ellipse', 'line', 'polyline',
+    'polygon', 'path', 'text', 'tspan', 'title', 'desc',
+    'lineargradient', 'radialgradient', 'stop',
+    'clippath', 'mask', 'pattern', 'marker'
 ]);
 
 const SAFE_ATTRS = new Set([
@@ -124,11 +137,37 @@ const SAFE_ATTRS = new Set([
     // localizar o elemento via document.getElementById. "type",
     // "value", "placeholder", "name", "checked", "disabled",
     // "for", "min", "max", "step" cobrem os casos normais de
-    // input/button/label sem abrir mao de href/src/on* (que
-    // continuam bloqueados abaixo, sem excecao).
+    // input/button/label.
     'id', 'type', 'value', 'placeholder', 'name', 'checked',
-    'disabled', 'for', 'min', 'max', 'step'
+    'disabled', 'for', 'min', 'max', 'step',
+    'alt', 'role', 'target', 'rel', 'loading', 'width', 'height',
+    'low', 'high', 'optimum', 'open', 'scope', 'rows', 'cols',
+    'readonly', 'maxlength', 'selected', 'multiple', 'rel',
+    // SVG (nomes em minusculas: a comparacao e' feita em minusculas)
+    'viewbox', 'xmlns', 'preserveaspectratio',
+    'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry',
+    'fx', 'fy', 'dx', 'dy', 'rotate', 'd', 'points', 'transform',
+    'fill', 'fill-opacity', 'fill-rule', 'clip-rule', 'opacity',
+    'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+    'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity',
+    'stroke-miterlimit', 'visibility', 'display',
+    'text-anchor', 'dominant-baseline', 'font-size', 'font-family',
+    'font-weight', 'font-style', 'letter-spacing', 'text-decoration',
+    'textlength', 'lengthadjust',
+    'offset', 'stop-color', 'stop-opacity', 'gradientunits',
+    'gradienttransform', 'spreadmethod',
+    'clip-path', 'mask', 'clippathunits', 'maskunits',
+    'patternunits', 'patterntransform', 'patterncontentunits',
+    'marker-start', 'marker-mid', 'marker-end',
+    'markerwidth', 'markerheight', 'markerunits', 'refx', 'refy', 'orient'
 ]);
+
+// Allowlist (nao blocklist): so estes protocolos passam em href/src.
+// javascript:, vbscript: e data: de HTML/SVG nunca entram.
+const SAFE_HREF = /^(https?:\/\/|mailto:|tel:|#)/i;
+const SAFE_IMG_SRC = /^(https?:\/\/|data:image\/(png|jpe?g|gif|webp|avif);base64,)/i;
+const UNSAFE_VALUE = /javascript\s*:|vbscript\s*:/i;
+const UNSAFE_STYLE = /url\s*\(|expression\s*\(|@import|behavior\s*:|-moz-binding|javascript\s*:/i;
 
 function sanitizeHtml(html) {
     const template = document.createElement('template');
@@ -144,26 +183,48 @@ function sanitizeHtml(html) {
 
         [...el.attributes].forEach((attr) => {
             const name = attr.name.toLowerCase();
+            const value = attr.value;
 
+            // Atributos de evento: nunca, sem excecao.
             if (name.startsWith('on')) {
-                el.removeAttribute(name);
+                el.removeAttribute(attr.name);
                 return;
             }
 
-            if (name === 'href' || name === 'src') {
-                el.removeAttribute(name);
+            if (name === 'href') {
+                if (!(tag === 'a' && SAFE_HREF.test(value.trim()))) {
+                    el.removeAttribute(attr.name);
+                }
                 return;
             }
 
-            if (name === 'style' && /url\s*\(|expression\s*\(/i.test(attr.value)) {
-                el.removeAttribute(name);
+            if (name === 'src') {
+                if (!(tag === 'img' && SAFE_IMG_SRC.test(value.trim()))) {
+                    el.removeAttribute(attr.name);
+                }
                 return;
             }
 
-            if (!SAFE_ATTRS.has(name)) {
-                el.removeAttribute(name);
+            if (name === 'style') {
+                if (UNSAFE_STYLE.test(value)) el.removeAttribute(attr.name);
+                return;
+            }
+
+            const permitido = SAFE_ATTRS.has(name)
+                || name.startsWith('aria-')
+                || name.startsWith('data-');
+            if (!permitido || UNSAFE_VALUE.test(value)) {
+                el.removeAttribute(attr.name);
             }
         });
+
+        if (tag === 'a') {
+            if (el.getAttribute('target') === '_blank') {
+                el.setAttribute('rel', 'noopener noreferrer');
+            } else {
+                el.removeAttribute('target');
+            }
+        }
     });
 
     return template.innerHTML;
