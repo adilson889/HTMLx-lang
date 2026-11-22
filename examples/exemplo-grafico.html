@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gráficos com XLang</title>
+<style>
+  body { font-family: sans-serif; max-width: 420px; margin: 16px auto; padding: 0 12px; color: #222; background: #fff; }
+  h1 { font-size: 18px; }
+  svg { display: block; margin-bottom: 14px; border: 1px solid #ddd; border-radius: 10px; padding: 8px; box-sizing: border-box; }
+  @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } .cartao { border-color: #333; } }
+</style>
+
+<script src="https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/xlang-interpreter.js"></script>
+
+</head>
+<body>
+<h1>Gráficos com XLang</h1>
+
+<script type="text/xlang">
+<program>
+    <import name="xlang.grafico"></import>
+    <array name="turmas" value="['A', 'B', 'C']"></array>
+    <array name="notas" value="[3, 7, 5]"></array>
+    <print>{plotParabola(1, -5, 6)}</print>
+    <print>{plotBars(turmas, notas, 'Notas por turma')}</print>
+</program>
+</script>
+</body>
+</html>
