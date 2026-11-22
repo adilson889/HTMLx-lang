@@ -32,3 +32,93 @@ Registration in xlang-modules.json:
 
 Invalid arguments throw an error with a clear message, for example:
 `plotParabola: "a" must not be zero (use plotLinear for a straight line).`
+
+## Examples
+
+Parabola with vertex and roots:
+
+```html
+<script type="text/xlang">
+<program>
+    <from xlang import grafico>
+    <print>{plotParabola(1, -5, 6)}</print>
+</program>
+</script>
+```
+
+Draws y = x² − 5x + 6, with the roots x = 2 and x = 3 and the vertex marked.
+
+Parabola with a custom title (opens downwards because a < 0):
+
+```html
+<script type="text/xlang">
+<program>
+    <from xlang import grafico>
+    <print>{plotParabola(-1, 0, 4, 'Trajetoria')}</print>
+</program>
+</script>
+```
+
+Straight line:
+
+```html
+<script type="text/xlang">
+<program>
+    <from xlang import grafico>
+    <print>{plotLinear(2, -4)}</print>
+</program>
+</script>
+```
+
+Draws y = 2x − 4, with the point (0; −4) and the root x = 2 marked.
+
+Points joined by lines:
+
+```html
+<script type="text/xlang">
+<program>
+    <from xlang import grafico>
+    <array name="xs" value="[1, 2, 3, 4]"></array>
+    <array name="ys" value="[2, 4, 5, 9]"></array>
+    <print>{plotPoints(xs, ys, 'Evolucao', true)}</print>
+</program>
+</script>
+```
+
+Bar chart:
+
+```html
+<script type="text/xlang">
+<program>
+    <from xlang import grafico>
+    <array name="turmas" value="['A', 'B', 'C']"></array>
+    <array name="notas" value="[3, 7, 5]"></array>
+    <print>{plotBars(turmas, notas, 'Notas por turma')}</print>
+</program>
+</script>
+```
+
+Pie chart:
+
+```html
+<script type="text/xlang">
+<program>
+    <from xlang import grafico>
+    <array name="opcoes" value="['Sim', 'Nao']"></array>
+    <array name="votos" value="[60, 40]"></array>
+    <print>{plotPie(opcoes, votos, 'Votos')}</print>
+</program>
+</script>
+```
+
+Number line with marked points:
+
+```html
+<script type="text/xlang">
+<program>
+    <from xlang import grafico>
+    <array name="solucoes" value="[-2, 3]"></array>
+    <print>{numberLine(-5, 5, solucoes, 'Solucoes')}</print>
+</program>
+</script>
+```
