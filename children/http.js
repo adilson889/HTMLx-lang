@@ -1,176 +1,140 @@
 // children/http.js
-// Estende o <fetch> nativo com cache, retry, timeout e swap no DOM
+// Estende o <fetch> nativo com cache, retry e timeout.
+// Não reimplementa o fetch: só intercepta quando há opções extra.
 
 (function () {
-    if (typeof window === 'undefined' || !window.XLangInterpreter) return;
+    if (typeof window === 'undefined') return;
 
-    const originalProcessTag = XLangInterpreter.prototype.processTag;
+    const httpCache = new Map(); // chave -> { data, timestamp, ttl }
 
-    // Cache em memória
-    const httpCache = new Map();
+    function init() {
+        if (typeof XLangInterpreter === 'undefined') {
+            setTimeout(init, 50);
+            return;
+        }
 
-    async function fetchWithRetry(url, options, retries, retryDelay, timeout) {
-        let lastError;
-        for (let attempt = 0; attempt <= retries; attempt++) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = timeout
-                    ? setTimeout(() => controller.abort(), timeout)
-                    : null;
+        const originalProcessTag = XLangInterpreter.prototype.processTag;
 
-                const response = await fetch(url, {
-                    method: options.method || 'GET',
-                    headers: options.headers || {},
-                    body: options.body || undefined,
-                    signal: controller.signal
-                });
-
-                if (timeoutId) clearTimeout(timeoutId);
-
-                // Mesmo formato do <fetch> nativo
-                let data;
-                const text = await response.text();
-                try {
-                    data = JSON.parse(text);
-                } catch {
-                    data = text;
-                }
-
-                return {
-                    ok: response.ok,
-                    status: response.status,
-                    statusText: response.statusText,
-                    data,
-                    headers: Object.fromEntries(response.headers.entries())
-                };
-            } catch (e) {
-                lastError = e;
-                if (attempt < retries) {
-                    await new Promise((r) => setTimeout(r, retryDelay));
-                }
+        XLangInterpreter.prototype.processTag = async function (tagName, attrs, body, scope) {
+            if (tagName !== 'fetch') {
+                return originalProcessTag.call(this, tagName, attrs, body, scope);
             }
-        }
-        throw lastError;
-    }
 
-    function applySwap(targetId, swap, content) {
-        const el = document.getElementById(targetId);
-        if (!el) return;
-
-        switch (swap) {
-            case 'outerHTML':
-                el.outerHTML = content;
-                break;
-            case 'textContent':
-                el.textContent = content;
-                break;
-            case 'innerHTML':
-            default:
-                el.innerHTML = content;
-                break;
-        }
-    }
-
-    XLangInterpreter.prototype.processTag = async function (tagName, attrs, body, scope) {
-        if (tagName === 'fetch') {
-            const urlExpr = this.getAttr(attrs, 'url');
-            const asName = this.getAttr(attrs, 'as');
-            const targetId = this.getAttr(attrs, 'target');
-            const swap = this.getAttr(attrs, 'swap') || 'innerHTML';
-            const method = this.getAttr(attrs, 'method') || 'GET';
-            const bodyExpr = this.getAttr(attrs, 'body');
-            const headersExpr = this.getAttr(attrs, 'headers');
-
-            // Opções extras
             const cache = this.getAttr(attrs, 'cache') === 'true';
             const ttl = Number(this.getAttr(attrs, 'ttl') || '60000');
             const retries = Number(this.getAttr(attrs, 'retries') || '0');
             const retryDelay = Number(this.getAttr(attrs, 'retry-delay') || '1000');
             const timeout = Number(this.getAttr(attrs, 'timeout') || '0');
 
-            if (!urlExpr) {
-                throw new Error('<fetch>: missing "url" attribute.');
+            // Sem opções extra -> fetch nativo
+            if (!cache && retries === 0 && timeout === 0) {
+                return originalProcessTag.call(this, tagName, attrs, body, scope);
             }
+
+            const urlExpr = this.getAttr(attrs, 'url');
+            const asName = this.getAttr(attrs, 'as');
+            const methodAttr = this.getAttr(attrs, 'method');
+            const bodyExpr = this.getAttr(attrs, 'body');
+            const headersExpr = this.getAttr(attrs, 'headers');
+
+            if (!urlExpr || !asName) return;
 
             let url;
-            try {
-                url = await this.evalExpr(urlExpr, scope);
-            } catch {
-                url = urlExpr.replace(/^['"]|['"]$/g, '');
-            }
+            try { url = this.evalExpr(urlExpr, scope); }
+            catch { url = urlExpr; }
 
-            let requestBody = undefined;
-            if (bodyExpr) {
-                try {
-                    requestBody = await this.evalExpr(bodyExpr, scope);
-                } catch {
-                    requestBody = bodyExpr;
-                }
-                if (typeof requestBody === 'object') {
-                    requestBody = JSON.stringify(requestBody);
-                }
-            }
+            const method = (methodAttr || 'GET').toUpperCase();
 
-            let headers = {};
-            if (headersExpr) {
-                try {
-                    headers = await this.evalExpr(headersExpr, scope);
-                } catch {
-                    headers = {};
+            const options = { method };
+            if (headersExpr !== null) {
+                try { options.headers = this.evalExpr(headersExpr, scope); }
+                catch { options.headers = {}; }
+            }
+            if (bodyExpr !== null && method !== 'GET') {
+                let bodyVal;
+                try { bodyVal = this.evalExpr(bodyExpr, scope); }
+                catch { bodyVal = bodyExpr; }
+                options.headers = options.headers || {};
+                if (typeof bodyVal === 'object') {
+                    options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
+                    options.body = JSON.stringify(bodyVal);
+                } else {
+                    options.body = String(bodyVal);
                 }
             }
 
-            // Cache
-            const cacheKey = `${method}:${url}`;
+            const cacheKey = `${method}:${url}:${options.body || ''}`;
+
+            // Cache hit
             if (cache && httpCache.has(cacheKey)) {
                 const entry = httpCache.get(cacheKey);
                 if (Date.now() - entry.timestamp < entry.ttl) {
-                    if (asName) {
-                        scope.defineVar(asName, { type: 'value', value: entry.result, mutable: true });
-                    }
-                    if (targetId) {
-                        applySwap(targetId, swap, typeof entry.result.data === 'object'
-                            ? JSON.stringify(entry.result.data)
-                            : String(entry.result.data));
-                    }
+                    scope.defineVar(asName, {
+                        type: 'value',
+                        value: entry.result,
+                        mutable: true
+                    });
                     return;
                 }
                 httpCache.delete(cacheKey);
             }
 
-            // Requisição
-            try {
-                const result = await fetchWithRetry(
-                    url,
-                    { method, body: requestBody, headers },
-                    retries,
-                    retryDelay,
-                    timeout
-                );
+            // Requisição com retry e timeout
+            let result;
+            let lastError = null;
 
-                if (cache) {
-                    httpCache.set(cacheKey, { result, timestamp: Date.now(), ttl });
-                }
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    let controller = null;
+                    let timeoutId = null;
 
-                if (asName) {
-                    scope.defineVar(asName, { type: 'value', value: result, mutable: true });
-                }
+                    if (timeout > 0) {
+                        controller = new AbortController();
+                        timeoutId = setTimeout(() => controller.abort(), timeout);
+                        options.signal = controller.signal;
+                    }
 
-                if (targetId) {
-                    applySwap(targetId, swap, typeof result.data === 'object'
-                        ? JSON.stringify(result.data)
-                        : String(result.data));
-                }
-            } catch (e) {
-                console.error('XLang <fetch> error:', e.message);
-                if (asName) {
-                    scope.defineVar(asName, { type: 'value', value: { ok: false, status: 0, data: null, error: e.message }, mutable: true });
+                    const res = await fetch(url, options);
+
+                    if (timeoutId) clearTimeout(timeoutId);
+
+                    const contentType = res.headers.get('content-type') || '';
+                    let data;
+                    if (contentType.includes('application/json')) {
+                        data = await res.json();
+                    } else {
+                        data = await res.text();
+                    }
+
+                    result = { ok: res.ok, status: res.status, data };
+
+                    // Se não for ok e ainda há tentativas, tenta de novo
+                    if (!res.ok && attempt < retries) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+
+                    break;
+                } catch (e) {
+                    lastError = e;
+                    if (attempt < retries) {
+                        await new Promise((r) => setTimeout(r, retryDelay));
+                    } else {
+                        result = { ok: false, status: 0, data: null, error: e.message };
+                    }
                 }
             }
 
-            return;
-        }
+            if (result === undefined) {
+                result = { ok: false, status: 0, data: null, error: lastError ? lastError.message : 'unknown' };
+            }
 
-        return originalProcessTag.call(this, tagName, attrs, body, scope);
-    };
+            if (cache && result.ok) {
+                httpCache.set(cacheKey, { result, timestamp: Date.now(), ttl });
+            }
+
+            scope.defineVar(asName, { type: 'value', value: result, mutable: true });
+        };
+    }
+
+    init();
 })();
