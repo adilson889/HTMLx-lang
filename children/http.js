@@ -1,11 +1,8 @@
 // children/http.js
-// Estende o <fetch> nativo com cache, retry e timeout.
-// Não reimplementa o fetch: só intercepta quando há opções extra.
-
 (function () {
     if (typeof window === 'undefined') return;
 
-    const httpCache = new Map(); // chave -> { data, timestamp, ttl }
+    const httpCache = new Map();
 
     function init() {
         if (typeof XLangInterpreter === 'undefined') {
@@ -23,116 +20,70 @@
             const cache = this.getAttr(attrs, 'cache') === 'true';
             const ttl = Number(this.getAttr(attrs, 'ttl') || '60000');
             const retries = Number(this.getAttr(attrs, 'retries') || '0');
-            const retryDelay = Number(this.getAttr(attrs, 'retry-delay') || '1000');
             const timeout = Number(this.getAttr(attrs, 'timeout') || '0');
 
-            // Sem opções extra -> fetch nativo
+            // Se não tem as opções do http.js, usa o fetch nativo e limpo
             if (!cache && retries === 0 && timeout === 0) {
                 return originalProcessTag.call(this, tagName, attrs, body, scope);
             }
 
+            // Extrair URL e nome da variável para o cache
             const urlExpr = this.getAttr(attrs, 'url');
             const asName = this.getAttr(attrs, 'as');
-            const methodAttr = this.getAttr(attrs, 'method');
-            const bodyExpr = this.getAttr(attrs, 'body');
-            const headersExpr = this.getAttr(attrs, 'headers');
+            const url = this.evalExpr(urlExpr, scope);
+            const cacheKey = `${url}`;
 
-            if (!urlExpr || !asName) return;
-
-            let url;
-            try { url = this.evalExpr(urlExpr, scope); }
-            catch { url = urlExpr; }
-
-            const method = (methodAttr || 'GET').toUpperCase();
-
-            const options = { method };
-            if (headersExpr !== null) {
-                try { options.headers = this.evalExpr(headersExpr, scope); }
-                catch { options.headers = {}; }
-            }
-            if (bodyExpr !== null && method !== 'GET') {
-                let bodyVal;
-                try { bodyVal = this.evalExpr(bodyExpr, scope); }
-                catch { bodyVal = bodyExpr; }
-                options.headers = options.headers || {};
-                if (typeof bodyVal === 'object') {
-                    options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
-                    options.body = JSON.stringify(bodyVal);
-                } else {
-                    options.body = String(bodyVal);
-                }
-            }
-
-            const cacheKey = `${method}:${url}:${options.body || ''}`;
-
-            // Cache hit
+            // Verificar cache
             if (cache && httpCache.has(cacheKey)) {
                 const entry = httpCache.get(cacheKey);
                 if (Date.now() - entry.timestamp < entry.ttl) {
-                    scope.defineVar(asName, {
-                        type: 'value',
-                        value: entry.result,
-                        mutable: true
-                    });
+                    scope.defineVar(asName, { type: 'value', value: entry.result, mutable: true });
                     return;
                 }
                 httpCache.delete(cacheKey);
             }
 
-            // Requisição com retry e timeout
-            let result;
-            let lastError = null;
+            // Limpar os atributos extra para o fetch nativo não se confundir
+            let cleanAttrs = attrs
+                .replace(/cache="[^"]*"/g, '')
+                .replace(/ttl="[^"]*"/g, '')
+                .replace(/retries="[^"]*"/g, '')
+                .replace(/retry-delay="[^"]*"/g, '')
+                .replace(/timeout="[^"]*"/g, '');
+
+            let result = null;
 
             for (let attempt = 0; attempt <= retries; attempt++) {
                 try {
-                    let controller = null;
-                    let timeoutId = null;
+                    // Criar um scope temporário para intercetar o resultado do fetch nativo
+                    const tempScope = new Scope(scope);
+                    
+                    // Executar o fetch nativo
+                    await originalProcessTag.call(this, 'fetch', cleanAttrs, body, tempScope);
+                    
+                    // O fetch nativo guardou a resposta na variável
+                    const entry = tempScope.getVarEntry(asName);
+                    if (entry) result = entry.value;
 
-                    if (timeout > 0) {
-                        controller = new AbortController();
-                        timeoutId = setTimeout(() => controller.abort(), timeout);
-                        options.signal = controller.signal;
-                    }
-
-                    const res = await fetch(url, options);
-
-                    if (timeoutId) clearTimeout(timeoutId);
-
-                    const contentType = res.headers.get('content-type') || '';
-                    let data;
-                    if (contentType.includes('application/json')) {
-                        data = await res.json();
-                    } else {
-                        data = await res.text();
-                    }
-
-                    result = { ok: res.ok, status: res.status, data };
-
-                    // Se não for ok e ainda há tentativas, tenta de novo
-                    if (!res.ok && attempt < retries) {
-                        throw new Error(`HTTP ${res.status}`);
-                    }
-
-                    break;
+                    // Se a resposta for OK, para de tentar
+                    if (result && result.ok) break;
                 } catch (e) {
-                    lastError = e;
-                    if (attempt < retries) {
-                        await new Promise((r) => setTimeout(r, retryDelay));
-                    } else {
-                        result = { ok: false, status: 0, data: null, error: e.message };
-                    }
+                    if (attempt === retries) throw e;
+                }
+
+                // Esperar antes de tentar de novo
+                if (attempt < retries) {
+                    await new Promise(r => setTimeout(r, 1000));
                 }
             }
 
-            if (result === undefined) {
-                result = { ok: false, status: 0, data: null, error: lastError ? lastError.message : 'unknown' };
-            }
-
-            if (cache && result.ok) {
+            // Guardar no cache e definir no scope principal
+            if (cache && result && result.ok) {
                 httpCache.set(cacheKey, { result, timestamp: Date.now(), ttl });
             }
-
-            scope.defineVar(asName, { type: 'value', value: result, mutable: true });
+            if (result) {
+                scope.defineVar(asName, { type: 'value', value: result, mutable: true });
+            }
         };
     }
 
