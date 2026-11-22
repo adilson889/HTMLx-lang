@@ -2,8 +2,7 @@
   "children": [
     "children/state.js",
     "children/timers.js",
-    "children/js-bridge.js"
+    "children/js-bridge.js",
+    "children/http.js"
   ]
 }
-
-
