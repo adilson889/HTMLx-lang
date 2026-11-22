@@ -1,12 +1,13 @@
 # xlang-grafico — Reference
 
-Graphics library. Every function returns an SVG string (`<svg ...>`) ready to insert in the page or chat.
+Graphics library. Every function returns an `XLangHtml` value (an SVG drawing) that `<print>` renders as a graphic.
+This needs an interpreter with `XLangHtml` support and the SVG whitelist in `sanitizeHtml`. Without it, the functions return the raw SVG string.
 Axes and text use `currentColor`, so it works in light and dark themes.
 
 ## Import
 
 ```html
-<from xlang import grafico>
+<from xlang import grafico />
 ```
 
 Registration in xlang-modules.json:
@@ -40,7 +41,7 @@ Parabola with vertex and roots:
 ```html
 <script type="text/xlang">
 <program>
-    <from xlang import grafico>
+    <from xlang import grafico />
     <print>{plotParabola(1, -5, 6)}</print>
 </program>
 </script>
@@ -53,7 +54,7 @@ Parabola with a custom title (opens downwards because a < 0):
 ```html
 <script type="text/xlang">
 <program>
-    <from xlang import grafico>
+    <from xlang import grafico />
     <print>{plotParabola(-1, 0, 4, 'Trajetoria')}</print>
 </program>
 </script>
@@ -64,7 +65,7 @@ Straight line:
 ```html
 <script type="text/xlang">
 <program>
-    <from xlang import grafico>
+    <from xlang import grafico />
     <print>{plotLinear(2, -4)}</print>
 </program>
 </script>
@@ -77,7 +78,7 @@ Points joined by lines:
 ```html
 <script type="text/xlang">
 <program>
-    <from xlang import grafico>
+    <from xlang import grafico />
     <array name="xs" value="[1, 2, 3, 4]"></array>
     <array name="ys" value="[2, 4, 5, 9]"></array>
     <print>{plotPoints(xs, ys, 'Evolucao', true)}</print>
@@ -90,7 +91,7 @@ Bar chart:
 ```html
 <script type="text/xlang">
 <program>
-    <from xlang import grafico>
+    <from xlang import grafico />
     <array name="turmas" value="['A', 'B', 'C']"></array>
     <array name="notas" value="[3, 7, 5]"></array>
     <print>{plotBars(turmas, notas, 'Notas por turma')}</print>
@@ -103,7 +104,7 @@ Pie chart:
 ```html
 <script type="text/xlang">
 <program>
-    <from xlang import grafico>
+    <from xlang import grafico />
     <array name="opcoes" value="['Sim', 'Nao']"></array>
     <array name="votos" value="[60, 40]"></array>
     <print>{plotPie(opcoes, votos, 'Votos')}</print>
@@ -116,7 +117,7 @@ Number line with marked points:
 ```html
 <script type="text/xlang">
 <program>
-    <from xlang import grafico>
+    <from xlang import grafico />
     <array name="solucoes" value="[-2, 3]"></array>
     <print>{numberLine(-5, 5, solucoes, 'Solucoes')}</print>
 </program>
