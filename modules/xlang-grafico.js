@@ -6,6 +6,8 @@
     if (typeof window === 'undefined' || !window.XLangRegistry) return;
 
     const R = window.XLangRegistry;
+    // se o interpretador suportar XLangHtml, o SVG e desenhado; senao devolve a string
+    const html = (s) => (window.XLangHtml ? new window.XLangHtml(s) : s);
     const CORES = ['#4f6bed', '#e8833a', '#2fa36b', '#c94f7c', '#8a6fdf', '#d4a017'];
 
     function requireNumbers(args, fnName) {
@@ -115,7 +117,7 @@
         let s = p.svg + curva(p.X, p.Y, f, xmin, xmax, ymin, ymax, CORES[0]);
         s += ponto(p.X, p.Y, xv, yv, CORES[1], `vértice (${fmt(xv)}; ${fmt(yv)})`, a > 0);
         raizes.forEach((r, i) => { if (i === 0 || Math.abs(r - raizes[0]) > 1e-9) s += ponto(p.X, p.Y, r, 0, CORES[2], `x = ${fmt(r)}`, a < 0); });
-        return s + '</svg>';
+        return html(s + '</svg>');
     });
 
     // plotLinear(m, b): y = mx + b
@@ -131,7 +133,7 @@
         let s = p.svg + `<line x1="${num(p.X(xmin))}" y1="${num(p.Y(y1))}" x2="${num(p.X(xmax))}" y2="${num(p.Y(y2))}" stroke="${CORES[0]}" stroke-width="2"/>`;
         s += ponto(p.X, p.Y, 0, b, CORES[1], `(0; ${fmt(b)})`);
         if (m !== 0) s += ponto(p.X, p.Y, xr, 0, CORES[2], `x = ${fmt(xr)}`);
-        return s + '</svg>';
+        return html(s + '</svg>');
     });
 
     // plotPoints(xs, ys, titulo, ligar): pontos (e opcionalmente ligados por linhas)
@@ -145,7 +147,7 @@
         let s = p.svg;
         if (ligar) s += `<polyline points="${xs.map((x, i) => num(p.X(x)) + ',' + num(p.Y(ys[i]))).join(' ')}" fill="none" stroke="${CORES[0]}" stroke-width="2"/>`;
         xs.forEach((x, i) => { s += ponto(p.X, p.Y, x, ys[i], CORES[1]); });
-        return s + '</svg>';
+        return html(s + '</svg>');
     });
 
     // ===== BARRAS / PIZZA =====
@@ -164,7 +166,7 @@
             s += `<text x="${num(x0 + w / 2)}" y="${num(y0) - 3}" text-anchor="middle" fill="currentColor" font-size="10">${fmt(v)}</text>`;
             s += `<text x="${num(x0 + w / 2)}" y="${H - MB + 12}" text-anchor="middle" fill="currentColor" fill-opacity="0.8">${esc(labels[i])}</text>`;
         });
-        return s + '</svg>';
+        return html(s + '</svg>');
     });
 
     R.register('plotPie', (labels, values, titulo) => {
@@ -183,7 +185,7 @@
             s += `<text x="228" y="${54 + i * 20}" fill="currentColor">${esc(labels[i])} (${fmt(fr * 100)}%)</text>`;
             ang = a2;
         });
-        return s + '</svg>';
+        return html(s + '</svg>');
     });
 
     // ===== RETA NUMERICA =====
@@ -205,7 +207,7 @@
             if (p < min || p > max) return;
             s += `<circle cx="${num(X(p))}" cy="64" r="5" fill="${CORES[i % CORES.length]}"/><text x="${num(X(p))}" y="50" text-anchor="middle" fill="currentColor" font-weight="600">${fmt(p)}</text>`;
         });
-        return s + '</svg>';
+        return html(s + '</svg>');
     });
 
     function eq2(a, b, c) {
