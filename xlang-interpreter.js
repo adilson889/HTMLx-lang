@@ -105,69 +105,34 @@ function escapeHtml(text) {
         .replace(/'/g, '&#39;');
 }
 
+// HTML gerado por modulos registados (ex: graficos SVG). O <print> nao o escapa;
+// continua a passar pelo sanitizeHtml, que so aceita as tags/atributos das listas abaixo.
+class XLangHtml {
+    constructor(html) { this.html = String(html); }
+    toString() { return this.html; }
+}
+if (typeof window !== 'undefined') window.XLangHtml = XLangHtml;
+
+const SAFE_SVG_TAGS = new Set(['svg', 'g', 'path', 'line', 'circle', 'rect', 'polyline', 'polygon', 'text']);
+const SAFE_SVG_ATTRS = new Set([
+    'viewbox', 'width', 'height', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'd', 'points',
+    'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linejoin', 'stroke-linecap',
+    'text-anchor', 'font-size', 'font-weight', 'font-family', 'transform', 'xmlns', 'role', 'aria-label'
+]);
+
 const SAFE_TAGS = new Set([
     'b', 'i', 'u', 's', 'em', 'strong', 'small', 'mark', 'sub', 'sup',
     'br', 'hr', 'span', 'p', 'div',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
     'blockquote', 'code', 'pre', 'kbd', 'samp', 'var', 'cite', 'q',
-    'abbr', 'address', 'bdi', 'bdo', 'del', 'ins', 'time',
-    // Interativas: necessarias para <on target="..."> e <bind target="...">
-    // funcionarem -- sem estas, XLang nunca consegue montar UI clicavel.
-    'button', 'input', 'label', 'select', 'option', 'textarea', 'form',
-    // Estrutura e conteudo: layouts, cartoes, tabelas completas, links, imagens.
-    'section', 'article', 'header', 'footer', 'main', 'aside', 'nav',
-    'figure', 'figcaption', 'details', 'summary', 'dl', 'dt', 'dd',
-    'caption', 'colgroup', 'col', 'tfoot', 'progress', 'meter',
-    'a', 'img',
-    // SVG: graficos, diagramas e desenhos gerados por <for>/<foreach>.
-    // Ficam de fora (viram so o conteudo): script, style, use, image,
-    // animate, set, foreignObject, iframe, object, embed -- tudo o que
-    // pode carregar recursos externos ou correr codigo.
-    'svg', 'g', 'defs', 'rect', 'circle', 'ellipse', 'line', 'polyline',
-    'polygon', 'path', 'text', 'tspan', 'title', 'desc',
-    'lineargradient', 'radialgradient', 'stop',
-    'clippath', 'mask', 'pattern', 'marker'
+    'abbr', 'address', 'bdi', 'bdo', 'del', 'ins', 'time'
 ]);
 
 const SAFE_ATTRS = new Set([
     'class', 'style', 'title', 'dir', 'lang', 'datetime',
-    'cite', 'start', 'reversed', 'colspan', 'rowspan',
-    // "id" e' o que <on target="id">/<bind target="id"> usam para
-    // localizar o elemento via document.getElementById. "type",
-    // "value", "placeholder", "name", "checked", "disabled",
-    // "for", "min", "max", "step" cobrem os casos normais de
-    // input/button/label.
-    'id', 'type', 'value', 'placeholder', 'name', 'checked',
-    'disabled', 'for', 'min', 'max', 'step',
-    'alt', 'role', 'target', 'rel', 'loading', 'width', 'height',
-    'low', 'high', 'optimum', 'open', 'scope', 'rows', 'cols',
-    'readonly', 'maxlength', 'selected', 'multiple', 'rel',
-    // SVG (nomes em minusculas: a comparacao e' feita em minusculas)
-    'viewbox', 'xmlns', 'preserveaspectratio',
-    'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry',
-    'fx', 'fy', 'dx', 'dy', 'rotate', 'd', 'points', 'transform',
-    'fill', 'fill-opacity', 'fill-rule', 'clip-rule', 'opacity',
-    'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
-    'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity',
-    'stroke-miterlimit', 'visibility', 'display',
-    'text-anchor', 'dominant-baseline', 'font-size', 'font-family',
-    'font-weight', 'font-style', 'letter-spacing', 'text-decoration',
-    'textlength', 'lengthadjust',
-    'offset', 'stop-color', 'stop-opacity', 'gradientunits',
-    'gradienttransform', 'spreadmethod',
-    'clip-path', 'mask', 'clippathunits', 'maskunits',
-    'patternunits', 'patterntransform', 'patterncontentunits',
-    'marker-start', 'marker-mid', 'marker-end',
-    'markerwidth', 'markerheight', 'markerunits', 'refx', 'refy', 'orient'
+    'cite', 'start', 'reversed', 'colspan', 'rowspan'
 ]);
-
-// Allowlist (nao blocklist): so estes protocolos passam em href/src.
-// javascript:, vbscript: e data: de HTML/SVG nunca entram.
-const SAFE_HREF = /^(https?:\/\/|mailto:|tel:|#)/i;
-const SAFE_IMG_SRC = /^(https?:\/\/|data:image\/(png|jpe?g|gif|webp|avif);base64,)/i;
-const UNSAFE_VALUE = /javascript\s*:|vbscript\s*:/i;
-const UNSAFE_STYLE = /url\s*\(|expression\s*\(|@import|behavior\s*:|-moz-binding|javascript\s*:/i;
 
 function sanitizeHtml(html) {
     const template = document.createElement('template');
@@ -176,55 +141,33 @@ function sanitizeHtml(html) {
     template.content.querySelectorAll('*').forEach((el) => {
         const tag = el.tagName.toLowerCase();
 
-        if (!SAFE_TAGS.has(tag)) {
+        if (!SAFE_TAGS.has(tag) && !SAFE_SVG_TAGS.has(tag)) {
             el.replaceWith(...el.childNodes);
             return;
         }
 
         [...el.attributes].forEach((attr) => {
             const name = attr.name.toLowerCase();
-            const value = attr.value;
 
-            // Atributos de evento: nunca, sem excecao.
             if (name.startsWith('on')) {
-                el.removeAttribute(attr.name);
+                el.removeAttribute(name);
                 return;
             }
 
-            if (name === 'href') {
-                if (!(tag === 'a' && SAFE_HREF.test(value.trim()))) {
-                    el.removeAttribute(attr.name);
-                }
+            if (name === 'href' || name === 'src') {
+                el.removeAttribute(name);
                 return;
             }
 
-            if (name === 'src') {
-                if (!(tag === 'img' && SAFE_IMG_SRC.test(value.trim()))) {
-                    el.removeAttribute(attr.name);
-                }
+            if (name === 'style' && /url\s*\(|expression\s*\(/i.test(attr.value)) {
+                el.removeAttribute(name);
                 return;
             }
 
-            if (name === 'style') {
-                if (UNSAFE_STYLE.test(value)) el.removeAttribute(attr.name);
-                return;
-            }
-
-            const permitido = SAFE_ATTRS.has(name)
-                || name.startsWith('aria-')
-                || name.startsWith('data-');
-            if (!permitido || UNSAFE_VALUE.test(value)) {
-                el.removeAttribute(attr.name);
+            if (!SAFE_ATTRS.has(name) && !(SAFE_SVG_TAGS.has(tag) && SAFE_SVG_ATTRS.has(name))) {
+                el.removeAttribute(name);
             }
         });
-
-        if (tag === 'a') {
-            if (el.getAttribute('target') === '_blank') {
-                el.setAttribute('rel', 'noopener noreferrer');
-            } else {
-                el.removeAttribute('target');
-            }
-        }
     });
 
     return template.innerHTML;
@@ -637,7 +580,7 @@ class XLangInterpreter {
         return parts;
     }
 
-async evalExpr(expr, scope) {
+    evalExpr(expr, scope) {
         let out = '';
         let i = 0;
         const calledFuncs = new Set();
@@ -788,13 +731,11 @@ async evalExpr(expr, scope) {
 
         const paramNames = [];
         const paramValues = [];
-        const userFuncNames = new Set();
         calledFuncs.forEach((name) => {
             paramNames.push(name);
             if (NATIVE_FUNCS.has(name) && !scope.getFunc(name) && !this.globalFuncs.get(name)) {
                 paramValues.push((...args) => NATIVE_FUNCS.get(name)(...args));
             } else {
-                userFuncNames.add(name);
                 paramValues.push((...args) => this.callFunction(name, args, scope));
             }
         });
@@ -803,32 +744,8 @@ async evalExpr(expr, scope) {
             paramValues.push((...args) => this.callMethod(info.receiver, info.methodName, args, callerClassName));
         });
 
-        // Chamadas a <fun> do utilizador (this.callFunction) sao sempre
-        // assincronas por baixo -- executeBlock usa "await" em cascata
-        // para suportar <if>/<for>/chamadas nativas dentro do corpo da
-        // funcao. "new Function" normal e' sincrono: se a expressao usar
-        // o valor de retorno (ex: {somar(1,2)} ou {somar(1,2) + 1}),
-        // fica preso numa Promise nao resolvida em vez do valor real
-        // (aparece como "[object Promise]" em qualquer sitio que mostre
-        // o resultado como texto). A correcao: gerar uma funcao
-        // ASSINCRONA (AsyncFunction) em vez de uma normal, e prefixar
-        // "await" em cada chamada a funcao de utilizador dentro do
-        // proprio codigo gerado -- assim o await resolve a chamada
-        // exatamente onde ela esta na expressao, mesmo no meio de uma
-        // conta maior, sem precisar de pre-calcular nada.
-        let outComAwait = out;
-        if (userFuncNames.size > 0) {
-            for (const name of userFuncNames) {
-                const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(', 'g');
-                outComAwait = outComAwait.replace(re, 'await ' + name + '(');
-            }
-        }
-
-        const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-        const fn = userFuncNames.size > 0
-            ? new AsyncFunction(...paramNames, 'return (' + outComAwait + ')')
-            : new Function(...paramNames, 'return (' + out + ')');
-        return await fn.apply(undefined, paramValues);
+        const fn = new Function(...paramNames, 'return (' + out + ')');
+        return fn.apply(undefined, paramValues);
     }
 
     async callFunction(name, argValues, callerScope) {
@@ -907,7 +824,7 @@ async evalExpr(expr, scope) {
             for (const f of c2.fields) {
                 const fieldScope = new Scope(c2.declScope);
                 let val;
-                try { val = await this.evalExpr(f.valueExpr, fieldScope); }
+                try { val = this.evalExpr(f.valueExpr, fieldScope); }
                 catch { val = f.valueExpr; }
                 instance[f.name] = val;
             }
@@ -951,7 +868,7 @@ async evalExpr(expr, scope) {
 
             if (tag === 'if') {
                 let cond = false;
-                try { cond = !!await this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
+                try { cond = !!this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
                 catch { cond = false; }
                 if (cond) {
                     await this.executeBlock(this.parseStatements(stmt.body), new Scope(scope));
@@ -966,7 +883,7 @@ async evalExpr(expr, scope) {
             if (tag === 'elseif') {
                 if (chainState === false) {
                     let cond = false;
-                    try { cond = !!await this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
+                    try { cond = !!this.evalExpr(this.getAttr(stmt.attrs, 'condition') || 'false', scope); }
                     catch { cond = false; }
                     if (cond) {
                         await this.executeBlock(this.parseStatements(stmt.body), new Scope(scope));
@@ -1031,7 +948,7 @@ async evalExpr(expr, scope) {
 
             case 'return': {
                 const valueExpr = this.getAttr(attrs, 'value');
-                const value = valueExpr !== null ? await this.evalExpr(valueExpr, scope) : undefined;
+                const value = valueExpr !== null ? this.evalExpr(valueExpr, scope) : undefined;
                 throw new ReturnSignal(value);
             }
 
@@ -1048,24 +965,21 @@ async evalExpr(expr, scope) {
                     this.outputDiv.appendChild(target);
                 }
 
-                const render = async () => {
-                    const matches = [...rawText.matchAll(/{([^}]+)}/g)];
-                    const resolved = await Promise.all(matches.map(async (m) => {
-                        const expr = m[1];
+                const render = () => {
+                    const text = rawText.replace(/{([^}]+)}/g, (match, expr) => {
                         try {
-                            return escapeHtml(String(await this.evalExpr(expr.trim(), scope)));
+                            const v = this.evalExpr(expr.trim(), scope);
+                            return v instanceof XLangHtml ? v.html : escapeHtml(String(v));
                         } catch (e) {
                             if (this.printErrorMessage !== null) {
                                 return escapeHtml(this.printErrorMessage);
                             }
                             return escapeHtml(`[error: ${e.message}]`);
                         }
-                    }));
-                    let i = 0;
-                    const text = rawText.replace(/{([^}]+)}/g, () => resolved[i++]);
+                    });
                     target.innerHTML = sanitizeHtml(text);
                 };
-                await render();
+                render();
 
                 const usedNames = this.extractVarNames(rawText);
                 let stateListener = null;
@@ -1165,18 +1079,18 @@ async evalExpr(expr, scope) {
                 } else if (rawValue.startsWith('<call')) {
                     const fnName = this.getAttr(rawValue, 'name');
                     const argsStr = this.getAttr(rawValue, 'args') || '';
-                    const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
+                    const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
                     const result = await this.callFunction(fnName, argValues, scope);
                     scope.defineVar(name, { type: 'value', value: result, mutable: tagName === 'var' });
                 } else if (rawValue.startsWith('<new')) {
                     const className = this.getAttr(rawValue, 'class');
                     const argsStr = this.getAttr(rawValue, 'args') || '';
-                    const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
+                    const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
                     const instance = await this.instantiate(className, argValues);
                     scope.defineVar(name, { type: 'value', value: instance, mutable: tagName === 'var' });
                 } else {
                     let value;
-                    try { value = await this.evalExpr(rawValue, scope); }
+                    try { value = this.evalExpr(rawValue, scope); }
                     catch { value = rawValue; }
                     scope.defineVar(name, { type: 'value', value, mutable: tagName === 'var' });
                 }
@@ -1201,7 +1115,7 @@ async evalExpr(expr, scope) {
                 }
 
                 let value;
-                try { value = await this.evalExpr(rawValue, scope); }
+                try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
 
                 const propMatch = name.match(/^([A-Za-z_]\w*)\.(\w+)$/);
@@ -1221,7 +1135,7 @@ async evalExpr(expr, scope) {
                     const entry = scope.getVarEntry(arrName);
                     if (!entry || !Array.isArray(entry.value)) throw new Error(`"${arrName}" is not an array.`);
                     let idx;
-                    try { idx = await this.evalExpr(idxExpr, scope); }
+                    try { idx = this.evalExpr(idxExpr, scope); }
                     catch { idx = Number(idxExpr); }
                     entry.value[idx] = value;
                     break;
@@ -1260,7 +1174,7 @@ async evalExpr(expr, scope) {
                     if (!el) throw new Error(`<array>: no element with id "${targetId}" found for value="#${targetId}".`);
                     value = Array.from(el.children).map((child) => child.textContent.trim());
                 } else if (rawValue !== null) {
-                    try { value = await this.evalExpr(rawValue, scope); }
+                    try { value = this.evalExpr(rawValue, scope); }
                     catch { value = []; }
                 }
 
@@ -1279,7 +1193,7 @@ async evalExpr(expr, scope) {
                 }
 
                 let newItems;
-                try { newItems = await this.evalExpr(rawValue, scope); }
+                try { newItems = this.evalExpr(rawValue, scope); }
                 catch { newItems = []; }
 
                 if (!Array.isArray(newItems)) {
@@ -1301,7 +1215,7 @@ async evalExpr(expr, scope) {
                 }
 
                 let value;
-                try { value = await this.evalExpr(rawValue, scope); }
+                try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
 
                 entry.value.push(value);
@@ -1328,7 +1242,7 @@ async evalExpr(expr, scope) {
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) throw new Error(`"${name}" is not an array.`);
                 let value;
-                try { value = await this.evalExpr(rawValue, scope); }
+                try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
                 entry.value.unshift(value);
                 break;
@@ -1351,7 +1265,7 @@ async evalExpr(expr, scope) {
                 const entry = scope.getVarEntry(target);
                 if (!entry || !Array.isArray(entry.value)) throw new Error(`"${target}" is not an array.`);
                 let value;
-                try { value = await this.evalExpr(rawValue, scope); }
+                try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
                 const idx = entry.value.findIndex((v) => v === value);
                 scope.defineVar(name, { type: 'value', value: idx, mutable: true });
@@ -1365,7 +1279,7 @@ async evalExpr(expr, scope) {
                 const entry = scope.getVarEntry(name);
                 if (!entry || !Array.isArray(entry.value)) throw new Error(`"${name}" is not an array.`);
                 let idx;
-                try { idx = await this.evalExpr(indexAttr, scope); }
+                try { idx = this.evalExpr(indexAttr, scope); }
                 catch { idx = Number(indexAttr); }
                 entry.value.splice(idx, 1);
                 break;
@@ -1421,10 +1335,10 @@ async evalExpr(expr, scope) {
 
             case 'for': {
                 const varName = this.getAttr(attrs, 'var');
-                const fromVal = Number(await this.evalExpr(this.getAttr(attrs, 'from') || '0', scope));
-                const toVal = Number(await this.evalExpr(this.getAttr(attrs, 'to') || '0', scope));
+                const fromVal = Number(this.evalExpr(this.getAttr(attrs, 'from') || '0', scope));
+                const toVal = Number(this.evalExpr(this.getAttr(attrs, 'to') || '0', scope));
                 const stepAttr = this.getAttr(attrs, 'step');
-                const step = Number(stepAttr !== null ? await this.evalExpr(stepAttr, scope) : 1);
+                const step = Number(stepAttr !== null ? this.evalExpr(stepAttr, scope) : 1);
 
                 if (step === 0 || !varName) break;
 
@@ -1449,7 +1363,7 @@ async evalExpr(expr, scope) {
             case 'switch': {
                 const valueExpr = this.getAttr(attrs, 'value');
                 let switchVal;
-                try { switchVal = await this.evalExpr(valueExpr, scope); }
+                try { switchVal = this.evalExpr(valueExpr, scope); }
                 catch { switchVal = undefined; }
 
                 const cases = this.parseStatements(body);
@@ -1458,7 +1372,7 @@ async evalExpr(expr, scope) {
                 for (const c of cases) {
                     if (c.tagName === 'case') {
                         let cVal;
-                        try { cVal = await this.evalExpr(this.getAttr(c.attrs, 'value'), scope); }
+                        try { cVal = this.evalExpr(this.getAttr(c.attrs, 'value'), scope); }
                         catch { cVal = undefined; }
                         if (cVal == switchVal) { matched = c; break; }
                     } else if (c.tagName === 'default') {
@@ -1499,7 +1413,7 @@ async evalExpr(expr, scope) {
             case 'call': {
                 const fnName = this.getAttr(attrs, 'name');
                 const argsStr = this.getAttr(attrs, 'args') || '';
-                const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
+                const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
                 const targetName = this.getAttr(attrs, 'target');
                 if (targetName) {
                     const entry = scope.getVarEntry(targetName);
@@ -1575,7 +1489,7 @@ async evalExpr(expr, scope) {
                 const parentCls = this.classes.get(cls.parentName);
                 if (!parentCls) throw new Error('Parent class not found: ' + cls.parentName);
                 const argsStr = this.getAttr(attrs, 'args') || '';
-                const argValues = await Promise.all(this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope)));
+                const argValues = this.splitTopLevel(argsStr).map((a) => this.evalExpr(a, scope));
                 const thisEntry = scope.getVarEntry('this');
                 if (!thisEntry) throw new Error('<super> called without "this" in scope.');
                 await this.runInit(parentCls, thisEntry.value, argValues);
@@ -1591,19 +1505,19 @@ async evalExpr(expr, scope) {
                 if (!urlExpr || !asName) break;
 
                 let url;
-                try { url = await this.evalExpr(urlExpr, scope); }
+                try { url = this.evalExpr(urlExpr, scope); }
                 catch { url = urlExpr; }
 
                 const method = (methodAttr || 'GET').toUpperCase();
 
                 const options = { method };
                 if (headersExpr !== null) {
-                    try { options.headers = await this.evalExpr(headersExpr, scope); }
+                    try { options.headers = this.evalExpr(headersExpr, scope); }
                     catch { options.headers = {}; }
                 }
                 if (bodyExpr !== null && method !== 'GET') {
                     let bodyVal;
-                    try { bodyVal = await this.evalExpr(bodyExpr, scope); }
+                    try { bodyVal = this.evalExpr(bodyExpr, scope); }
                     catch { bodyVal = bodyExpr; }
                     options.headers = options.headers || {};
                     if (typeof bodyVal === 'object') {
@@ -1706,7 +1620,7 @@ async evalExpr(expr, scope) {
                 const el = document.getElementById(targetId);
                 if (!el) throw new Error(`Element with id "${targetId}" not found.`);
                 let value;
-                try { value = await this.evalExpr(rawValue, scope); }
+                try { value = this.evalExpr(rawValue, scope); }
                 catch { value = rawValue; }
                 el.style.setProperty(property, String(value));
                 break;
@@ -1718,10 +1632,10 @@ async evalExpr(expr, scope) {
                 if (!keyExpr || valueExpr === null) break;
 
                 let key = keyExpr;
-                try { key = String(await this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
+                try { key = String(this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
 
                 let value;
-                try { value = await this.evalExpr(valueExpr, scope); } catch { value = valueExpr; }
+                try { value = this.evalExpr(valueExpr, scope); } catch { value = valueExpr; }
 
                 const namespacedKey = 'htmlx:' + key;
 
@@ -1740,7 +1654,7 @@ async evalExpr(expr, scope) {
                 if (!keyExpr || !asName) break;
 
                 let key = keyExpr;
-                try { key = String(await this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
+                try { key = String(this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
 
                 const namespacedKey = 'htmlx:' + key;
                 const raw = localStorage.getItem(namespacedKey);
@@ -1749,7 +1663,7 @@ async evalExpr(expr, scope) {
 
                 if (raw === null) {
                     if (defaultExpr !== null) {
-                        try { value = await this.evalExpr(defaultExpr, scope); } catch { value = defaultExpr; }
+                        try { value = this.evalExpr(defaultExpr, scope); } catch { value = defaultExpr; }
                     } else {
                         value = undefined;
                     }
@@ -1770,7 +1684,7 @@ async evalExpr(expr, scope) {
                 if (!keyExpr) break;
 
                 let key = keyExpr;
-                try { key = String(await this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
+                try { key = String(this.evalExpr(keyExpr, scope)); } catch { /* mantém literal */ }
 
                 localStorage.removeItem('htmlx:' + key);
                 break;
@@ -1936,17 +1850,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
             throw new Error(`XLang.call: public function "${name}" not found.`);
         }
     };
-
-    // Expoe a classe e o Scope globalmente. Sem isto, "class
-    // XLangInterpreter" declarada no topo deste <script> normal (nao
-    // type="module") fica presa ao escopo do proprio script -- nao vira
-    // propriedade de window sozinha, ao contrario de "var"/"function".
-    // Consumidores externos (ex: o preview do BotQL, que precisa correr
-    // blocos XLang injetados via innerHTML depois do carregamento da
-    // pagina, fora do alcance de initXLang) precisam de
-    // "new window.XLangInterpreter(container).run(codigo)" manualmente.
-    window.XLangInterpreter = XLangInterpreter;
-    window.XLangScope = Scope;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
