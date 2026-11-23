@@ -1,6 +1,6 @@
 # xlang-codigo — Reference
 
-Code generation library (proof of concept, v0.1). It builds TypeScript source from a tree of nodes, one character at a time, using syntax rules kept as data. There are no ready-made templates: every `const`, `:` and space is emitted by a rule.
+Code generation library (v0.2). It builds TypeScript source from a tree of nodes, one character at a time, using syntax rules kept as data. There are no ready-made templates: every `const`, `:` and space is emitted by a rule.
 Names given by the user are kept exactly as written, and the result is checked before it is returned. If anything is wrong, the library throws an error instead of returning doubtful code.
 The output is an `XLangHtml` value (a `<pre><code>` block), so it needs an interpreter with `XLangHtml` support. Without it, the function returns the raw HTML string.
 
@@ -86,6 +86,8 @@ The module also exposes `window.LumeCodigo` (and `module.exports` in Node), so o
 | funcao(nome, params, retornoTipo, corpo) | Node for a function. `corpo` ends with a `retorno` |
 | parametro(nome, tipo), retorno(expr) | Function parameter and `return` nodes |
 | literal(valor), ident(nome), binaria(esq, op, dir) | Expression nodes |
+| comparacao(esq, op, dir) | Comparison node (`<`, `>`, `<=`, `>=`, `===`, `!==`). Its type is `boolean`; text and boolean only accept `===` and `!==` |
+| se(cond, entao, senao?) | `if` node. `cond` must be `boolean`. Each branch must end with a `return`. Without `senao` it generates an `if` followed by the code below it (early return) |
 | verificar(programa, tabela) | Returns the list of problems (empty when all is right) |
 | emitirLetras(programa) | Returns the characters, in order, for a typing effect |
 | gerar(programa, tabela) | Checks, then returns the final text. Throws if there are problems |
@@ -167,6 +169,23 @@ A user variable that was not declared (the library refuses to return code):
 
 Shows: `[error: A variável do utilizador "turma" não foi declarada.]`
 
+Using the JavaScript API, with an `if` inside a function:
+
+```js
+const C = window.LumeCodigo;
+const f = C.funcao('maior', [C.parametro('a', 'number'), C.parametro('b', 'number')], 'number', [
+  C.se(C.comparacao(C.ident('a'), '>', C.ident('b')), [C.retorno(C.ident('a'))]),
+  C.retorno(C.ident('b'))
+]);
+console.log(C.gerar([f], C.criarTabela()));
+// function maior(a: number, b: number): number {
+//   if (a > b) {
+//     return a;
+//   }
+//   return b;
+// }
+```
+
 Using the JavaScript API, with a function and the letters one by one:
 
 ```js
@@ -193,5 +212,6 @@ const letras = C.emitirLetras(programa); // ['c', 'o', 'n', 's', 't', ' ', 'a', 
 ## Limits of this version
 
 - Only `const`/`let` with `number`, `string` and `boolean`, simple calculations, and functions with one `return`. Through `tsPrograma` only `const` lines are available; functions are built with the JavaScript API.
-- No `if`, loops, arrays, `import`, `interface` or classes yet.
+- `if` and `else` exist only inside functions, through the JavaScript API (not through `tsPrograma`). Their branches must end with `return`.
+- No loops, arrays, `import`, `interface` or classes yet.
 - The rules (`REGRAS`) live at the top of the module, in a form ready to move to text files.
