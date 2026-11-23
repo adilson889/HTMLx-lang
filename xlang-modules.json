@@ -4,6 +4,7 @@
   "grafico": "https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/modules/xlang-grafico.js",
   "tabela": "https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/modules/xlang-tabela.js",
   "codigo": "https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/modules/xlang-codigo.js",
+  "desenhos": "https://cdn.jsdelivr.net/gh/adilson889/HTMLx-lang@main/modules/xlang-desenhos.js",
   "lodash": {
     "cdn": "https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js",
     "global": "_",
