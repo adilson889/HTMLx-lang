@@ -1,4 +1,4 @@
-// xlang-codigo.js - XLang Code Library v0.1 (prova de conceito)
+// xlang-codigo.js - XLang Code Library v0.2
 // Gera TypeScript letra a letra a partir de uma árvore de nós, sem templates prontos.
 // Camadas: nós -> verificador -> emissor (regras de sintaxe em dados) -> texto.
 // As variáveis do utilizador entram com o nome exato e são verificadas antes de mostrar.
@@ -12,6 +12,7 @@
     const INDENTACAO = 2;
     const TIPOS = ['number', 'string', 'boolean'];
     const OPERADORES = { number: ['+', '-', '*', '/'], string: ['+'], boolean: [] };
+    const COMPARADORES = { number: ['<', '>', '<=', '>=', '===', '!=='], string: ['===', '!=='], boolean: ['===', '!=='] };
     const PALAVRAS_RESERVADAS = new Set([
         'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
         'delete', 'do', 'else', 'enum', 'export', 'extends', 'false', 'finally', 'for',
@@ -35,6 +36,10 @@
             '{', FIM, INDENTA, '@corpo', DESINDENTA, '}', FIM],
         Retorno: ['return', ESP, '@expr', ';', FIM],
         Binaria: ['@esq', ESP, '@op', ESP, '@dir'],
+        Comparacao: ['@esq', ESP, '@op', ESP, '@dir'],
+        Se: ['if', ESP, '(', '@cond', ')', ESP, '{', FIM, INDENTA, '@entao', DESINDENTA, '}', FIM],
+        SeSenao: ['if', ESP, '(', '@cond', ')', ESP, '{', FIM, INDENTA, '@entao', DESINDENTA, '}', ESP,
+            'else', ESP, '{', FIM, INDENTA, '@senao', DESINDENTA, '}', FIM],
         Parametro: ['@nome', ':', ESP, '@tipo']
     };
 
@@ -45,6 +50,8 @@
     function literal(valor) { return { forma: 'Literal', valor }; }
     function ident(nome) { return { forma: 'Ident', nome }; }
     function binaria(esq, op, dir) { return { forma: 'Binaria', esq, op, dir }; }
+    function comparacao(esq, op, dir) { return { forma: 'Comparacao', esq, op, dir }; }
+    function se(cond, entao, senao) { return { forma: 'Se', cond, entao, senao: senao || [] }; }
     function parametro(nome, tipo) { return { forma: 'Parametro', nome, tipo }; }
 
     // ===== TABELA DE SÍMBOLOS =====
@@ -104,6 +111,20 @@
                 }
                 return esq;
             }
+            case 'Comparacao': {
+                const esq = tipoDaExpressao(no.esq, escopo, usados, problemas);
+                const dir = tipoDaExpressao(no.dir, escopo, usados, problemas);
+                if (!esq || !dir) return null;
+                if (esq !== dir) {
+                    problemas.push('Não se pode comparar ' + esq + ' com ' + dir + ' em "' + no.op + '".');
+                    return null;
+                }
+                if (!COMPARADORES[esq].includes(no.op)) {
+                    problemas.push('O comparador "' + no.op + '" não vale para ' + esq + '.');
+                    return null;
+                }
+                return 'boolean';
+            }
             default:
                 problemas.push('Expressão desconhecida: ' + no.forma + '.');
                 return null;
@@ -131,14 +152,33 @@
         if (!TIPOS.includes(no.retorno)) problemas.push('Tipo desconhecido: ' + no.retorno + '.');
         const ultimo = no.corpo[no.corpo.length - 1];
         if (!ultimo || ultimo.forma !== 'Retorno') problemas.push('A função "' + no.nome + '" tem de acabar com return.');
-        no.corpo.forEach(function(passo) {
-            if (passo.forma !== 'Retorno') {
-                problemas.push('Instrução não suportada na função "' + no.nome + '": ' + passo.forma + '.');
-                return;
+        verificarCorpo(no.corpo, local, no, usados, problemas);
+    }
+
+    // Verifica uma lista de passos (corpo da função ou de um if).
+    function verificarCorpo(corpo, local, fn, usados, problemas) {
+        corpo.forEach(function(passo, i) {
+            if (i < corpo.length - 1 && passo.forma === 'Retorno') {
+                problemas.push('Há código depois do return na função "' + fn.nome + '".');
             }
-            const tipo = tipoDaExpressao(passo.expr, local, usados, problemas);
-            if (tipo && tipo !== no.retorno) {
-                problemas.push('A função "' + no.nome + '" devolve ' + no.retorno + ' mas o return é ' + tipo + '.');
+            if (passo.forma === 'Retorno') {
+                const tipo = tipoDaExpressao(passo.expr, local, usados, problemas);
+                if (tipo && tipo !== fn.retorno) {
+                    problemas.push('A função "' + fn.nome + '" devolve ' + fn.retorno + ' mas o return é ' + tipo + '.');
+                }
+            } else if (passo.forma === 'Se') {
+                const t = tipoDaExpressao(passo.cond, local, usados, problemas);
+                if (t && t !== 'boolean') problemas.push('A condição do if tem de ser boolean, mas é ' + t + '.');
+                [passo.entao, passo.senao].forEach(function(ramo, k) {
+                    if (k === 1 && !ramo.length) return;
+                    if (!ramo.length) { problemas.push('O if da função "' + fn.nome + '" está vazio.'); return; }
+                    if (ramo[ramo.length - 1].forma !== 'Retorno') {
+                        problemas.push('Dentro do if, o último passo tem de ser return.');
+                    }
+                    verificarCorpo(ramo, local, fn, usados, problemas);
+                });
+            } else {
+                problemas.push('Instrução não suportada na função "' + fn.nome + '": ' + passo.forma + '.');
             }
         });
     }
@@ -230,7 +270,7 @@
             case 'palavra': case 'nome': case 'tipo': case 'op': case 'retorno':
                 em.texto(no[encaixe]);
                 break;
-            case 'valor': case 'expr': case 'esq': case 'dir':
+            case 'valor': case 'expr': case 'esq': case 'dir': case 'cond':
                 emitirExpressao(no[encaixe], em);
                 break;
             case 'params':
@@ -239,8 +279,8 @@
                     aplicarRegra('Parametro', p, em);
                 });
                 break;
-            case 'corpo':
-                no.corpo.forEach(function(passo) { aplicarRegra(passo.forma, passo, em); });
+            case 'corpo': case 'entao': case 'senao':
+                no[encaixe].forEach(function(passo) { aplicarRegra(passo.forma, passo, em); });
                 break;
             default:
                 throw new Error('Encaixe desconhecido: ' + encaixe + '.');
@@ -248,6 +288,7 @@
     }
 
     function aplicarRegra(nomeRegra, no, em) {
+        if (nomeRegra === 'Se' && no.senao && no.senao.length) nomeRegra = 'SeSenao';
         REGRAS[nomeRegra].forEach(function(item) {
             if (item === ESP) em.espaco();
             else if (item === FIM) em.fim();
@@ -282,8 +323,9 @@
     const API = {
         criarTabela: criarTabela, registarUtilizador: registarUtilizador,
         declaracao: declaracao, funcao: funcao, retorno: retorno, parametro: parametro,
-        literal: literal, ident: ident, binaria: binaria,
-        verificar: verificar, emitirLetras: emitirLetras, gerar: gerar
+        literal: literal, ident: ident, binaria: binaria, comparacao: comparacao, se: se,
+        verificar: verificar, emitirLetras: emitirLetras, gerar: gerar,
+        deLinhas: null
     };
 
     // ===== LIGAÇÃO AO XLANG =====
@@ -309,6 +351,8 @@
         });
         return { programa: programa, tabela: tabela };
     }
+
+    API.deLinhas = programaDasLinhas;
 
     if (typeof window !== 'undefined') {
         window.LumeCodigo = API;
