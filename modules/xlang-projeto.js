@@ -22,6 +22,7 @@
 
     let atual = '';
     let aberto = '';
+    const ouvintes = [];
 
     // ===== ARMAZENAMENTO =====
     function store() {
@@ -86,6 +87,7 @@
 
     // ===== ESTADO EM TEMPO REAL =====
     function sincronizar() {
+        ouvintes.slice().forEach((f) => { try { f(); } catch (e) { /* um ouvinte com erro nao deve parar os outros */ } });
         const api = window.XLangStateApi;
         if (!api) return;
         api.define('projeto', '');
@@ -239,7 +241,17 @@
             sincronizar();
             return texto;
         },
-        aberto() { return aberto; }
+        aberto() { return aberto; },
+        // regista uma funcao chamada sempre que o projeto, a lista ou o ficheiro aberto mudam; devolve a funcao que a retira
+        aoMudar(f) {
+            if (typeof f !== 'function') throw new Error('aoMudar: expected a function.');
+            ouvintes.push(f);
+            return () => { const i = ouvintes.indexOf(f); if (i >= 0) ouvintes.splice(i, 1); };
+        },
+        // todos os ficheiros do projeto atual de uma vez: { caminho: texto }
+        todos() {
+            return Object.assign({}, carregar(projetoAtual('todos'), 'todos').files);
+        }
     };
 
     window.XLangProjeto = API;
